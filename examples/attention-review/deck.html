@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attention 메커니즘 리뷰</title>
+<!--
+  interactive-slides deck template.
+  Fixed 1920x1080 stage + navigation core adapted from frontend-slides
+  (https://github.com/zarazhangrui/frontend-slides, MIT, (c) 2025 Zara Zhang).
+  Everything between "SLIDES START" and "SLIDES END" is content; the runtime at the bottom
+  should normally be left as is.
+-->
+
+<!-- === FONTS — Google Fonts only, so the same file also publishes as a claude.ai artifact.
+     A locally installed Pretendard wins automatically (first in the font stack). === -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Math&display=swap">
+
+<!-- === OPTIONAL: KaTeX (delete this block if the deck has no math).
+     Rendered as MathML, so no KaTeX stylesheet/fonts are needed. === -->
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+<style>
+/* ===========================================
+   THEME TOKENS — change the look here.
+   Two presets: data-preset="academic" (lab meeting, conference)
+   and data-preset="lecture" (blog lecture, public talk) on <body>.
+   =========================================== */
+:root {
+  --stage-bg: #101114;
+  --font-body: 'Pretendard Variable', Pretendard, 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-display: var(--font-body);
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --size-h1: 96px; --size-h2: 64px; --size-h3: 40px; --size-body: 34px; --size-small: 26px;
+  --pad-y: 104px; --pad-x: 128px; --gap: 40px;
+  --radius: 18px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+body[data-preset="academic"] {
+  --bg: #f7f6f2; --bg-alt: #ecebe5; --surface: #ffffff; --line: #d9d7cf;
+  --text: #1c1d21; --muted: #5d6068; --accent: #1f5fbf; --accent-2: #c8611a;
+  --font-display: 'Noto Serif KR', Georgia, serif;
+}
+body[data-preset="lecture"] {
+  --bg: #15171c; --bg-alt: #1d2027; --surface: #232733; --line: #343a48;
+  --text: #f1f0ec; --muted: #a3a8b4; --accent: #ffb547; --accent-2: #5ec8f2;
+  --size-h1: 112px; --size-h2: 72px; --size-body: 36px;
+}
+
+/* ===========================================
+   FIXED 16:9 STAGE (do not edit)
+   =========================================== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--stage-bg); }
+body { font-family: var(--font-body); color: var(--text); -webkit-font-smoothing: antialiased; }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--bg); }
+.slide {
+  position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden;
+  visibility: hidden; opacity: 0; pointer-events: none;
+  background: var(--bg);
+  padding: var(--pad-y) var(--pad-x);
+  display: flex; flex-direction: column; gap: var(--gap);
+  font-size: var(--size-body); line-height: 1.5;
+  transition: opacity .35s var(--ease), visibility 0s linear .35s;
+}
+.slide.active { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; transition: opacity .35s var(--ease); }
+.slide img, .slide video, .slide canvas, .slide svg { max-width: 100%; max-height: 100%; }
+.slide aside.notes { display: none; }
+.slide math { font-size: 1.05em; }
+.slide math[display="block"] { margin: 12px 0; }
+
+/* Step builds: .step elements appear one per "next" press. */
+.step { opacity: 0; transform: translateY(16px); transition: opacity .4s var(--ease), transform .4s var(--ease); }
+.step.shown { opacity: 1; transform: none; }
+
+/* ===========================================
+   SLIDE COMPONENTS
+   =========================================== */
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; word-break: keep-all; }
+h1 { font-size: var(--size-h1); }
+h2 { font-size: var(--size-h2); }
+h3 { font-size: var(--size-h3); }
+p, li { word-break: keep-all; }
+.kicker { font-size: var(--size-small); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.lead { font-size: 44px; line-height: 1.4; color: var(--muted); max-width: 1400px; }
+.muted { color: var(--muted); }
+.small { font-size: var(--size-small); }
+.accent { color: var(--accent); }
+ul.points { list-style: none; display: flex; flex-direction: column; gap: 22px; }
+ul.points li { padding-left: 44px; position: relative; }
+ul.points li::before { content: ''; position: absolute; left: 0; top: .62em; width: 18px; height: 4px; background: var(--accent); border-radius: 2px; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; } /* cards size to content; add .fill to stretch */
+.cols.fill { flex: 1; min-height: 0; align-items: stretch; }
+.cols.c3 { grid-template-columns: repeat(3, 1fr); }
+.cols.wide-left { grid-template-columns: 3fr 2fr; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 40px; display: flex; flex-direction: column; gap: 16px; }
+.big-number { font-family: var(--font-display); font-size: 160px; font-weight: 700; line-height: 1; color: var(--accent); }
+.spacer { flex: 1; }
+.slide-footer { position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 44px; display: flex; justify-content: space-between; font-size: 22px; color: var(--muted); }
+pre.code { font-family: var(--font-mono); font-size: 26px; line-height: 1.55; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 32px 36px; overflow: hidden; white-space: pre; }
+figure { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+figure img { object-fit: contain; border-radius: 12px; }
+figcaption { font-size: var(--size-small); color: var(--muted); }
+
+/* Cover and statement slides */
+.slide.cover { justify-content: center; background: var(--bg-alt); }
+.slide.cover h1 { max-width: 1500px; }
+.slide.statement { justify-content: center; align-items: flex-start; background: var(--accent); color: var(--bg); }
+.slide.statement h2 { font-size: 88px; max-width: 1500px; }
+
+/* Demo panels: a stage (canvas/svg) plus a controls column. */
+.demo { display: grid; grid-template-columns: 1fr 460px; gap: 40px; flex: 1; min-height: 0; }
+.demo-stage { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; min-height: 0; }
+.demo-stage canvas, .demo-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; }
+.demo-controls { display: flex; flex-direction: column; gap: 28px; font-size: 28px; }
+.demo-controls label { display: flex; flex-direction: column; gap: 10px; }
+.demo-controls output { font-family: var(--font-mono); color: var(--accent); }
+.demo-controls input[type=range] { width: 100%; height: 36px; accent-color: var(--accent); }
+.demo-controls button { font: inherit; font-size: 26px; padding: 14px 24px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; }
+.demo-controls button.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+.demo-readout { font-family: var(--font-mono); font-size: 26px; color: var(--muted); }
+[data-demo-error]::after { content: '데모 오류: ' attr(data-demo-error); position: absolute; left: 16px; bottom: 16px; right: 16px; padding: 12px 16px; background: #b3261e; color: #fff; font-size: 22px; border-radius: 8px; z-index: 5; }
+
+/* ===========================================
+   DECK CHROME (outside the stage; hidden in print and embeds)
+   =========================================== */
+.deck-progress { position: fixed; left: 0; bottom: 0; height: 4px; background: var(--accent); transition: width .3s var(--ease); z-index: 1000; }
+.deck-counter { position: fixed; right: 18px; bottom: 12px; font: 14px/1 var(--font-mono); color: #8a8f99; z-index: 1000; opacity: .8; }
+.deck-jump { position: fixed; left: 50%; top: 24px; transform: translateX(-50%); padding: 10px 18px; background: #000c; color: #fff; font: 20px var(--font-mono); border-radius: 8px; z-index: 1001; display: none; }
+.deck-black { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; }
+body.blackout .deck-black { display: block; }
+body.embed .deck-progress, body.embed .deck-counter { display: none; }
+
+/* Presenter view (press S) */
+body.presenter .deck-viewport, body.presenter .deck-progress, body.presenter .deck-counter { display: none; }
+.presenter-ui { position: fixed; inset: 0; display: grid; grid-template-columns: 3fr 2fr; grid-template-rows: auto 1fr; gap: 16px; padding: 16px; background: #0d0e11; color: #e9e9ea; font-family: var(--font-body); }
+.presenter-ui .p-head { grid-column: 1 / -1; display: flex; gap: 32px; align-items: baseline; font: 600 28px var(--font-mono); }
+.presenter-ui .p-head .p-timer { color: #ffb547; cursor: pointer; }
+.presenter-ui .p-frames { display: grid; grid-template-rows: 3fr 2fr; gap: 12px; min-height: 0; }
+.presenter-ui iframe { width: 100%; height: 100%; border: 1px solid #333; border-radius: 8px; background: #000; }
+.presenter-ui .p-notes { overflow: auto; font-size: 24px; line-height: 1.6; white-space: pre-wrap; padding: 8px 12px; background: #16181d; border-radius: 8px; }
+
+@media print {
+  @page { size: 1920px 1080px; margin: 0; }
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; }
+  .slide { position: relative; visibility: visible !important; opacity: 1 !important; break-after: page; transition: none; }
+  .slide:last-child { break-after: auto; }
+  .step { opacity: 1 !important; transform: none !important; }
+  .deck-progress, .deck-counter, .deck-jump, .deck-black, .presenter-ui { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+/* ---- deck-specific additions ---- */
+pre.code .c  { color: var(--muted); }
+pre.code .k  { color: var(--accent-2); }
+pre.code .hl { background: color-mix(in srgb, var(--accent) 22%, transparent); border-radius: 6px; padding: 0 6px; }
+.cols.c4 { grid-template-columns: repeat(4, 1fr); gap: 28px; }
+.annot { flex: 0 0 auto; }
+.annot .card { padding: 28px 30px; gap: 10px; }
+.annot .card p { font-size: 30px; line-height: 1.4; }
+.eq { font-size: 64px; text-align: center; }
+.eq-sm { font-size: 44px; }
+.callout { font-size: 38px; font-weight: 600; padding: 22px 32px; border-left: 8px solid var(--accent); background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; }
+.cols.mat { grid-template-columns: 640px 1fr; gap: 48px; }
+.cols.mat figure svg { width: 640px; height: 600px; }
+.btnrow { display: flex; gap: 12px; }
+.btnrow button.primary { flex: 1; }
+.demo-controls .cap { font-size: 28px; line-height: 1.45; min-height: 4.4em; }
+.demo-controls .tex { font-size: 34px; min-height: 2.2em; color: var(--accent); }
+.demo-controls label.chk { flex-direction: row; align-items: center; gap: 14px; cursor: pointer; }
+.demo-controls label.chk input { width: 30px; height: 30px; accent-color: var(--accent); }
+.slide math { font-family: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', 'Noto Sans Math', math; }
+.refs { display: flex; flex-direction: column; gap: 6px; }
+</style>
+</head>
+<body data-preset="academic">
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+<!-- ================= SLIDES START ================= -->
+
+<section class="slide cover" id="cover">
+  <p class="kicker">Lab Meeting · Paper Review · 2026.10</p>
+  <h1>Attention 메커니즘 리뷰</h1>
+  <p class="lead">Scaled dot-product attention이 토큰마다 “어디를 볼지”를 계산하는 방법 — 수식에서 숫자까지</p>
+  <aside class="notes">10분 리뷰. 목표: 수식 한 줄을 실제 숫자로 따라가 보는 것.
+순서: 왜 필요했나 → Q/K/V → 수식 → √dk → 데모 → 행렬/코드 → 실전 요소.</aside>
+</section>
+
+<section class="slide" id="why">
+  <p class="kicker">Motivation</p>
+  <h2>왜 Attention인가</h2>
+  <div class="cols">
+    <div class="card">
+      <h3>RNN encoder–decoder</h3>
+      <ul class="points">
+        <li>문장 전체를 <b>고정 길이 벡터 하나</b>에 압축</li>
+        <li>문장이 길수록 앞부분 정보가 희미해짐</li>
+        <li>토큰을 순서대로 처리 → 병렬화 어려움</li>
+      </ul>
+    </div>
+    <div class="card step" style="border-color:var(--accent)">
+      <h3 class="accent">Attention</h3>
+      <ul class="points">
+        <li>출력을 만들 때마다 <b>입력 전체를 다시 본다</b></li>
+        <li>관련 있는 위치에 큰 가중치 → 장거리 의존성</li>
+        <li>모든 위치를 행렬 곱 한 번에 → 병렬화</li>
+      </ul>
+    </div>
+  </div>
+  <p class="small muted">Bahdanau et al., ICLR 2015 (RNN + attention) → Vaswani et al., NeurIPS 2017 (attention만으로 Transformer)</p>
+  <aside class="notes">병목: 인코더가 문장을 벡터 하나로 요약해야 했던 것.
+Bahdanau attention이 이를 풀었고, Transformer는 RNN을 아예 빼고 attention만 남김.
+→ 누르면 오른쪽 카드가 나타남.</aside>
+</section>
+
+<section class="slide" id="qkv">
+  <p class="kicker">Intuition</p>
+  <h2>Query · Key · Value — 검색으로 이해하기</h2>
+  <div class="cols c3">
+    <div class="card">
+      <h3 class="accent">Query <span class="muted">\(q_i\)</span></h3>
+      <p>지금 토큰이 <b>찾고 있는 것</b></p>
+      <p class="muted">\( q_i = x_i W_Q \)</p>
+    </div>
+    <div class="card">
+      <h3 class="accent">Key <span class="muted">\(k_j\)</span></h3>
+      <p>각 토큰이 내건 <b>색인표</b> — 무엇과 맞는지</p>
+      <p class="muted">\( k_j = x_j W_K \)</p>
+    </div>
+    <div class="card">
+      <h3 class="accent">Value <span class="muted">\(v_j\)</span></h3>
+      <p>맞았을 때 실제로 <b>가져갈 내용</b></p>
+      <p class="muted">\( v_j = x_j W_V \)</p>
+    </div>
+  </div>
+  <p class="callout">q와 k가 얼마나 맞는지(내적)를 재고, 그 비율대로 v를 섞는다.</p>
+  <aside class="notes">같은 입력 x에서 세 개의 학습된 선형 사영으로 Q, K, V를 만든다.
+검색 비유: 검색어(Q)를 색인(K)과 비교해서, 맞는 문서의 내용(V)을 가져온다.
+차이: 하나만 고르는 게 아니라 점수 비율대로 섞는다(soft).</aside>
+</section>
+
+<section class="slide" id="formula">
+  <p class="kicker">Scaled Dot-Product Attention</p>
+  <h2>수식 한 줄</h2>
+  <div class="eq">$$ \mathrm{Attention}(Q,K,V) = \mathrm{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}}\right)V $$</div>
+  <div class="cols c4 annot">
+    <div class="card"><h3>\(QK^{\top}\)</h3><p>모든 query–key 쌍의 유사도 점수 <span class="muted">(n×n)</span></p></div>
+    <div class="card"><h3>\(\div\sqrt{d_k}\)</h3><p>차원이 커져도 점수 크기를 일정하게</p></div>
+    <div class="card"><h3>softmax</h3><p>행마다 합이 1인 가중치로</p></div>
+    <div class="card"><h3>\(\cdot\,V\)</h3><p>가중치로 Value를 섞은 출력</p></div>
+  </div>
+  <p class="small muted">\( Q, K \in \mathbb{R}^{n\times d_k},\; V \in \mathbb{R}^{n\times d_v} \) — n은 토큰 수 · Vaswani et al., 2017, Eq. (1)</p>
+  <aside class="notes">왼쪽에서 오른쪽으로 읽기: 점수 → 스케일 → 정규화 → 가중합.
+결과의 i번째 행 = i번째 토큰의 새 표현.
+다음 슬라이드에서 √dk 이유, 그 다음 데모에서 이 네 단계를 숫자로 따라간다.</aside>
+</section>
+
+<section class="slide" id="scaling">
+  <p class="kicker">Why \(\sqrt{d_k}\)?</p>
+  <h2>왜 \(\sqrt{d_k}\)로 나누는가</h2>
+  <div class="cols wide-left">
+    <div class="card">
+      <p>\(q, k\)의 각 성분이 평균 0, 분산 1이고 서로 독립이라면</p>
+      <div class="eq-sm">$$ \mathrm{Var}(q\cdot k) = \sum_{i=1}^{d_k} \mathrm{Var}(q_i k_i) = d_k $$</div>
+      <ul class="points">
+        <li>\(d_k = 64\)이면 점수의 표준편차 ≈ 8</li>
+        <li>큰 점수 → softmax가 한 토큰에 거의 1 → <b>gradient ≈ 0</b></li>
+        <li>\(\sqrt{d_k}\)로 나누면 분산이 다시 1</li>
+      </ul>
+    </div>
+    <div class="card" style="justify-content:center">
+      <h3 class="accent">데모에서 확인</h3>
+      <p>다음 슬라이드에서 “√dₖ로 나누기”를 끄면 가중치가 한 토큰으로 더 쏠립니다.</p>
+    </div>
+  </div>
+  <aside class="notes">논문 각주의 논증: 내적은 dk개 항의 합이라 분산이 dk에 비례.
+softmax 포화 영역에서는 기울기가 거의 0이라 학습이 느려진다.
+temperature를 √dk로 고정한 softmax라고 봐도 된다.</aside>
+</section>
+
+<section class="slide" id="demo-attn">
+  <p class="kicker">Demo · 한 문장에서 attention 가중치 계산하기</p>
+  <h2>“it”은 어디를 볼까 — 단계별로</h2>
+  <div class="demo" id="attnDemo">
+    <div class="demo-stage"><svg viewBox="0 0 1000 640" aria-label="attention 계산 단계 도식"></svg></div>
+    <div class="demo-controls">
+      <div class="btnrow">
+        <button data-act="prev" aria-label="이전 단계">◀</button>
+        <button class="primary" data-act="next">다음 단계 ▶</button>
+        <button data-act="reset" aria-label="처음으로">↺</button>
+      </div>
+      <p class="demo-readout" data-out="stepn"></p>
+      <p class="cap" data-out="caption"></p>
+      <div class="tex" data-out="tex"></div>
+      <label class="chk"><input type="checkbox" name="scale" checked> √dₖ로 나누기 <output data-out="scale">ON</output></label>
+      <p class="demo-readout">토큰을 클릭하면 query가 바뀜 · Esc: 컨트롤에서 빠져나오기</p>
+    </div>
+  </div>
+  <aside class="notes">설명용 toy 값(dk=4, 손으로 정한 Q/K/V). 실제 학습된 가중치 아님을 먼저 말하기.
+1) query "it" 선택 → 2) 모든 key → 3) 내적 점수(cat이 5.5로 최대) → 4) ÷2 → 5) softmax: cat 약 64%
+→ 6) value 가중합으로 출력 z.
+그다음 √dk 체크를 끄면 cat이 약 94%로 쏠리는 것 보여주기. 시간 남으면 "hungry"나 "ate"를 클릭.
+끝나면 Esc 후 →.</aside>
+</section>
+
+<section class="slide" id="matrix">
+  <p class="kicker">Implementation</p>
+  <h2>모든 query를 한 번에 — 행렬 곱</h2>
+  <div class="cols fill mat">
+    <figure>
+      <svg id="attnMatrix" viewBox="0 0 640 600" aria-label="toy 문장의 attention 가중치 행렬"></svg>
+      <figcaption>데모와 같은 toy 값의 softmax(QKᵀ/√dₖ) — 행 = query, 열 = key</figcaption>
+    </figure>
+    <div style="display:flex;flex-direction:column;gap:28px;min-width:0">
+<pre class="code"><span class="k">def</span> attention(Q, K, V, mask=<span class="k">None</span>):
+    d_k = Q.size(-1)
+    scores = Q @ K.transpose(-2, -1) <span class="hl">/ math.sqrt(d_k)</span>
+    <span class="k">if</span> mask <span class="k">is not None</span>:
+        scores = scores.masked_fill(mask == 0, -1e9)
+    weights = scores.softmax(dim=-1)
+    <span class="k">return</span> weights @ V, weights</pre>
+      <ul class="points">
+        <li>데모의 한 행 계산 = 이 행렬의 한 줄</li>
+        <li>비용 \(O(n^2 d)\) — 긴 시퀀스에서 병목</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">데모에서 한 query씩 한 계산을 모든 query에 대해 쌓으면 이 n×n 행렬.
+"it" 행을 보면 데모 결과와 같다.
+코드는 7줄이면 끝. mask는 다음 슬라이드. n² 메모리가 긴 문맥에서 문제 → FlashAttention 등 후속 연구.</aside>
+</section>
+
+<section class="slide" id="practice">
+  <p class="kicker">In Practice</p>
+  <h2>실제 Transformer에서 붙는 것들</h2>
+  <div class="cols c3">
+    <div class="card">
+      <h3 class="accent">Multi-head</h3>
+      <p>h개의 head가 각자 다른 \(W_Q, W_K, W_V\)로 서로 다른 관계를 병렬로 본다</p>
+      <p class="small muted">\( \mathrm{Concat}(\mathrm{head}_1,\dots,\mathrm{head}_h)W^O \)</p>
+    </div>
+    <div class="card">
+      <h3 class="accent">Causal mask</h3>
+      <p>decoder는 미래 토큰의 점수를 \(-\infty\)로 → softmax 후 가중치 0</p>
+      <p class="small muted">생성 시 다음 토큰을 미리 보지 않게</p>
+    </div>
+    <div class="card">
+      <h3 class="accent">Self vs Cross</h3>
+      <p>Self: Q, K, V 모두 같은 시퀀스<br>Cross: Q는 decoder, K·V는 encoder</p>
+      <p class="small muted">번역·멀티모달 모델의 연결 고리</p>
+    </div>
+  </div>
+  <aside class="notes">Base Transformer: d_model 512, h=8, head당 dk=64 → 전체 연산량은 single-head와 비슷.
+mask는 코드의 masked_fill 한 줄.
+cross-attention은 decoder query가 encoder 출력을 검색하는 구조.</aside>
+</section>
+
+<section class="slide" id="summary">
+  <p class="kicker">Summary</p>
+  <h2>정리</h2>
+  <ul class="points">
+    <li>Attention = query와 key의 <b>내적 점수</b> → softmax 가중치 → value <b>가중합</b></li>
+    <li>\(\sqrt{d_k}\) 스케일링은 softmax 포화를 막아 학습을 안정시킨다</li>
+    <li>전체가 행렬 곱이라 병렬화가 쉽지만, 비용은 \(O(n^2)\)</li>
+  </ul>
+  <div class="spacer"></div>
+  <div class="refs small muted">
+    <p>Bahdanau, Cho, Bengio. Neural Machine Translation by Jointly Learning to Align and Translate. ICLR 2015.</p>
+    <p>Vaswani et al. Attention Is All You Need. NeurIPS 2017.</p>
+  </div>
+  <aside class="notes">세 줄 요약 후 질문 받기.
+질문 예상: 왜 내적인가(additive attention 대비 빠름), positional encoding은 왜 필요한가(attention은 순서를 모름).</aside>
+</section>
+
+<!-- ================= SLIDES END ================= -->
+</main>
+</div>
+
+<script>
+/* ===========================================
+   DEMOS — one Deck.demo(...) per interactive slide.
+   mount: build DOM, draw a meaningful static state (this is what PDF/print shows).
+   enter/leave: start/stop work when the slide is shown/hidden.
+   api.raf(fn): per-frame callback that only runs while the slide is active.
+   =========================================== */
+window.addEventListener('DOMContentLoaded', () => {
+  /* ---- Toy data shared by the demo and the matrix slide (hand-picked, d_k = 4) ---- */
+  const TOK = ['The', 'cat', 'ate', 'because', 'it', 'was', 'hungry'];
+  const Q = [[0,0,0,1],[0,1,0,0],[1,0,0,0],[0,1,0,1],[2,0,1.5,0],[0,0,1,0],[1,0,1,0]];
+  const K = [[0,0,0,1],[2,0,1,0],[0,2,0,0],[0,0,0,2],[0,0,1,0],[0,1,0,1],[1,1,0,0]];
+  const V = [[0,0,0,1],[2,1,0,0],[0,2,0,1],[0,0,1,1],[1,0,1,0],[0,1,0,1],[1,0,2,0]];
+  const DK = 4;
+  const dot = (a, b) => a.reduce((s, x, i) => s + x * b[i], 0);
+  const sum = a => a.reduce((s, x) => s + x, 0);
+  function attend(qi, scale) {
+    const s = K.map(k => dot(Q[qi], k));
+    const sc = s.map(x => scale ? x / Math.sqrt(DK) : x);
+    const m = Math.max(...sc), e = sc.map(x => Math.exp(x - m)), Z = sum(e);
+    const a = e.map(x => x / Z);
+    const z = [0, 1, 2, 3].map(d => sum(a.map((w, j) => w * V[j][d])));
+    return { s, sc, a, z };
+  }
+  const fmt = x => (Math.round(x * 100) / 100).toString();
+  const vec = v => '[' + v.map(fmt).join(', ') + ']';
+  const tex = (el, t) => { if (window.katex) katex.render(t, el, { output: 'mathml', throwOnError: false }); else el.textContent = t; };
+
+  /* ---- Demo: step-through attention for one query token ---- */
+  Deck.demo('#attnDemo', {
+    mount(el) {
+      const svg = el.querySelector('svg');
+      const S = { qi: 4, k: 5, scale: true };
+      const N = 6;
+      const cx = j => 257 + j * 114;
+      const ROW = { tok: 45, key: 125, score: 205, scaled: 262, bar: 470, val: 520, out: 600 };
+      const LABEL = [['tok', '토큰'], ['key', 'Key kⱼ'], ['score', 'q·kⱼ'], ['scaled', '÷ √dₖ'], ['bar', 'αⱼ (softmax)'], ['val', 'Value vⱼ'], ['out', '출력 z']];
+      const minStep = { tok: 0, key: 1, score: 2, scaled: 3, bar: 4, val: 5, out: 5 };
+      const cells = (v, x, y, w, h, max, fs) => v.map((n, d) => {
+        const p = Math.round(Math.min(1, n / max) * 70);
+        const xx = x - (w * 4 + 6) / 2 + d * (w + 2);
+        return `<rect x="${xx}" y="${y - h / 2}" width="${w}" height="${h}" rx="4" style="fill:color-mix(in srgb, var(--accent) ${p}%, var(--surface));stroke:var(--line)"/>` +
+          `<text x="${xx + w / 2}" y="${y + fs * 0.36}" text-anchor="middle" font-size="${fs}" style="fill:${p > 40 ? 'var(--bg)' : 'var(--text)'}">${fmt(n)}</text>`;
+      }).join('');
+
+      function render() {
+        const r = attend(S.qi, S.scale), k = S.k;
+        const top = r.a.indexOf(Math.max(...r.a));
+        const vis = row => k >= minStep[row] ? 1 : 0.12;
+        let g = `<rect x="${cx(S.qi) - 56}" y="12" width="112" height="${ROW.val + 30}" rx="12" style="fill:var(--accent);opacity:.08"/>`;
+        LABEL.forEach(([row, txt]) => {
+          g += `<text x="190" y="${ROW[row] + 8}" text-anchor="end" font-size="23" font-weight="600" style="fill:var(--muted);opacity:${vis(row)}">${txt}</text>`;
+        });
+        TOK.forEach((t, j) => {
+          const q = j === S.qi;
+          g += `<g data-tok="${j}" style="cursor:pointer"><rect x="${cx(j) - 52}" y="${ROW.tok - 25}" width="104" height="50" rx="10" style="fill:${q ? 'var(--accent)' : 'var(--bg-alt)'};stroke:${q ? 'var(--accent)' : 'var(--line)'}"/>` +
+            `<text x="${cx(j)}" y="${ROW.tok + 8}" text-anchor="middle" font-size="24" font-weight="${q ? 700 : 500}" style="fill:${q ? 'var(--bg)' : 'var(--text)'}">${t}</text></g>`;
+          if (k >= 1) g += cells(K[j], cx(j), ROW.key, 24, 36, 2, 20);
+          if (k >= 2) g += `<text x="${cx(j)}" y="${ROW.score + 9}" text-anchor="middle" font-size="26" font-weight="${j === top ? 700 : 400}" style="fill:${j === top ? 'var(--accent)' : 'var(--text)'}">${fmt(r.s[j])}</text>`;
+          if (k >= 3) g += `<text x="${cx(j)}" y="${ROW.scaled + 9}" text-anchor="middle" font-size="26" style="fill:${S.scale ? 'var(--text)' : 'var(--muted)'}">${fmt(r.sc[j])}</text>`;
+          if (k >= 4) {
+            const h = Math.max(2, r.a[j] * 150);
+            g += `<rect x="${cx(j) - 30}" y="${ROW.bar - h}" width="60" height="${h}" rx="4" style="fill:${j === top ? 'var(--accent)' : 'var(--accent-2)'};opacity:${j === top ? 1 : .75}"/>` +
+              `<text x="${cx(j)}" y="${ROW.bar - h - 8}" text-anchor="middle" font-size="22" style="fill:var(--text)">${Math.round(r.a[j] * 100)}%</text>`;
+          }
+          if (k >= 5) g += `<g style="opacity:${0.35 + 0.65 * r.a[j] / r.a[top]}">${cells(V[j], cx(j), ROW.val, 24, 36, 2, 20)}</g>`;
+        });
+        g += `<line x1="200" y1="${ROW.bar}" x2="990" y2="${ROW.bar}" style="stroke:var(--line);stroke-width:2;opacity:${vis('bar')}"/>`;
+        if (k >= 5) g += cells(r.z, 600, ROW.out, 78, 46, 2, 24) +
+          `<text x="770" y="${ROW.out + 9}" font-size="24" style="fill:var(--muted)">= Σ αⱼ vⱼ</text>`;
+        svg.innerHTML = g;
+
+        const qn = TOK[S.qi], tn = TOK[top];
+        const expand = Q[S.qi].map((x, d) => `${fmt(x)}·${fmt(K[top][d])}`).join(' + ');
+        const caps = [
+          `query 토큰 “${qn}”를 고른다. q = ${vec(Q[S.qi])}`,
+          `모든 토큰의 Key kⱼ를 꺼낸다 (dₖ = ${DK}).`,
+          `내적으로 점수 계산 — q·k(${tn}) = ${expand} = ${fmt(r.s[top])}`,
+          S.scale ? `√dₖ = 2로 나눈다 → 점수 크기를 차원과 무관하게` : `스케일링 꺼짐 — 점수를 그대로 softmax에 넣는다`,
+          `softmax → 합이 1인 가중치. “${qn}” → “${tn}” ${Math.round(r.a[top] * 100)}%`,
+          `가중치로 Value를 섞어 출력 z = ${vec(r.z)}`
+        ];
+        const texs = [
+          `q_{\\text{${qn}}} = x_{\\text{${qn}}}W_Q`,
+          `k_j = x_j W_K`,
+          `s_j = q\\cdot k_j`,
+          S.scale ? `s_j \\,/\\, \\sqrt{d_k}` : `s_j`,
+          S.scale ? `\\alpha_j = \\frac{e^{s_j/\\sqrt{d_k}}}{\\sum_l e^{s_l/\\sqrt{d_k}}}` : `\\alpha_j = \\frac{e^{s_j}}{\\sum_l e^{s_l}}`,
+          `z = \\sum_j \\alpha_j v_j`
+        ];
+        el.querySelector('[data-out=stepn]').textContent = `단계 ${k + 1}/${N}`;
+        el.querySelector('[data-out=caption]').textContent = caps[k];
+        tex(el.querySelector('[data-out=tex]'), texs[k]);
+        el.querySelector('[data-out=scale]').textContent = S.scale ? 'ON' : 'OFF';
+      }
+
+      el.addEventListener('click', e => {
+        const a = e.target.closest('[data-act]'), t = e.target.closest('[data-tok]');
+        if (a) { const act = a.dataset.act; S.k = act === 'reset' ? 0 : Math.max(0, Math.min(N - 1, S.k + (act === 'next' ? 1 : -1))); render(); }
+        if (t) { S.qi = +t.dataset.tok; render(); }
+      });
+      el.querySelector('input[name=scale]').addEventListener('change', e => { S.scale = e.target.checked; render(); });
+      this.reset = () => { S.k = 0; S.qi = 4; S.scale = true; el.querySelector('input[name=scale]').checked = true; render(); };
+      this.render = render;
+      render();                      // mount: final step shown (what print/PDF shows)
+      window.addEventListener('load', render); // re-render captions once KaTeX has loaded
+    },
+    enter() { this.reset(); }        // live talk: start from step 1 with "it"
+  });
+
+  /* ---- Static matrix on the implementation slide ---- */
+  const m = document.getElementById('attnMatrix');
+  if (m) {
+    const c = 66, x0 = 150, y0 = 110;
+    let g = '';
+    TOK.forEach((t, j) => {
+      g += `<text x="${x0 + j * c + c / 2 - 6}" y="${y0 - 12}" text-anchor="start" font-size="22" transform="rotate(-40 ${x0 + j * c + c / 2 - 6} ${y0 - 12})" style="fill:var(--muted)">${t}</text>`;
+    });
+    TOK.forEach((t, i) => {
+      const a = attend(i, true).a;
+      g += `<text x="${x0 - 12}" y="${y0 + i * c + c / 2 + 8}" text-anchor="end" font-size="22" font-weight="${i === 4 ? 700 : 400}" style="fill:${i === 4 ? 'var(--accent)' : 'var(--muted)'}">${t}</text>`;
+      a.forEach((w, j) => {
+        const p = Math.round(w * 100);
+        g += `<rect x="${x0 + j * c}" y="${y0 + i * c}" width="${c - 3}" height="${c - 3}" rx="5" style="fill:color-mix(in srgb, var(--accent) ${Math.min(100, p * 1.4)}%, var(--surface))"/>` +
+          `<text x="${x0 + j * c + c / 2 - 1}" y="${y0 + i * c + c / 2 + 7}" text-anchor="middle" font-size="20" style="fill:${p > 35 ? 'var(--bg)' : 'var(--text)'}">${p}</text>`;
+      });
+    });
+    g += `<rect x="${x0 - 4}" y="${y0 + 4 * c - 4}" width="${7 * c + 5}" height="${c + 5}" rx="8" style="fill:none;stroke:var(--accent-2);stroke-width:3"/>`;
+    m.innerHTML = g;
+  }
+});
+</script>
+
+<script>
+/* ===========================================
+   DECK RUNTIME (leave as is)
+   Keys: → ↓ Space PageDown next · ← ↑ PageUp prev · Home/End · number+Enter jump
+         F fullscreen · S presenter view · B blackout · Esc leave a demo control
+   =========================================== */
+(() => {
+  const W = 1920, H = 1080;
+  const params = new URLSearchParams(location.search);
+  const MODE = params.has('presenter') ? 'presenter' : params.has('embed') ? 'embed' : 'deck';
+  const errors = [];
+  window.addEventListener('error', e => errors.push(String(e.message || e)));
+  window.addEventListener('unhandledrejection', e => errors.push(String(e.reason)));
+
+  const stage = document.getElementById('deckStage');
+  const slides = [...stage.querySelectorAll(':scope > .slide')];
+  const demos = [];
+  let cur = -1, step = 0, presenterWin = null;
+
+  const stepsOf = s => [...s.querySelectorAll('.step')];
+  const slideOf = el => el.closest('.slide');
+
+  function fit() {
+    const f = Math.min(innerWidth / W, innerHeight / H);
+    stage.style.transform = `translate(${(innerWidth - W * f) / 2}px, ${(innerHeight - H * f) / 2}px) scale(${f})`;
+    demos.forEach(d => d.resizers.forEach(fn => safe(d, fn)));
+  }
+
+  function safe(d, fn, ...args) {
+    try { return fn.apply(d.hooks, args); } // `this` inside hooks = the hooks object
+    catch (err) { errors.push(`${d.name}: ${err.message}`); d.el.setAttribute('data-demo-error', err.message); console.error(err); }
+  }
+
+  function show(i, st = 0, from = 'local') {
+    i = Math.max(0, Math.min(i, slides.length - 1));
+    const changed = i !== cur;
+    if (changed && cur >= 0) demos.filter(d => d.slide === slides[cur]).forEach(d => d.hooks.leave && safe(d, d.hooks.leave, d.el));
+    if (changed) slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    cur = i;
+    const ss = stepsOf(slides[i]);
+    step = st < 0 ? ss.length : Math.min(st, ss.length);
+    ss.forEach((e, k) => e.classList.toggle('shown', k < step));
+    if (changed) demos.filter(d => d.slide === slides[i]).forEach(d => d.hooks.enter && safe(d, d.hooks.enter, d.el));
+    if (MODE !== 'embed') history.replaceState(null, '', `#${i + 1}${step ? '.' + step : ''}`);
+    const prog = document.querySelector('.deck-progress'), cnt = document.querySelector('.deck-counter');
+    if (prog) prog.style.width = `${slides.length > 1 ? (i / (slides.length - 1)) * 100 : 100}%`;
+    if (cnt) cnt.textContent = `${i + 1} / ${slides.length}`;
+    const msg = { type: 'deck-state', i, step };
+    if (presenterWin && !presenterWin.closed && from !== 'presenter') presenterWin.postMessage(msg, '*');
+    if (MODE === 'presenter') { updatePresenter(); if (from !== 'opener' && window.opener) window.opener.postMessage({ type: 'deck-goto', i, step }, '*'); }
+  }
+  const next = () => { const n = stepsOf(slides[cur]).length; step < n ? show(cur, step + 1) : show(cur + 1, 0); };
+  const prev = () => { step > 0 ? show(cur, step - 1) : show(cur - 1, -1); };
+
+  function parseHash() {
+    const m = location.hash.match(/^#(\d+)(?:\.(\d+))?/);
+    return m ? [parseInt(m[1], 10) - 1, parseInt(m[2] || '0', 10)] : [0, 0];
+  }
+
+  /* ---------- keyboard ---------- */
+  let jumpBuf = '';
+  document.addEventListener('keydown', e => {
+    if (MODE === 'embed') return;
+    const t = e.target;
+    const inControl = t.closest && t.closest('input, select, textarea, button, [contenteditable], [data-capture-keys]');
+    const k = e.key;
+    if (k === 'Escape' && inControl) { t.blur(); return; }
+    if ((k === 'PageDown' || k === 'PageUp') && !(t.closest && t.closest('textarea'))) { e.preventDefault(); k === 'PageDown' ? next() : prev(); return; }
+    if (inControl || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (/^\d$/.test(k)) { jumpBuf += k; showJump(); return; }
+    if (k === 'Enter' && jumpBuf) { show(parseInt(jumpBuf, 10) - 1); jumpBuf = ''; showJump(); return; }
+    if (k === 'Backspace' && jumpBuf) { jumpBuf = jumpBuf.slice(0, -1); showJump(); return; }
+    switch (k) {
+      case 'ArrowRight': case 'ArrowDown': case ' ': e.preventDefault(); next(); break;
+      case 'ArrowLeft': case 'ArrowUp': e.preventDefault(); prev(); break;
+      case 'Home': show(0); break;
+      case 'End': show(slides.length - 1, -1); break;
+      case 'f': case 'F': document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.(); break;
+      case 's': case 'S': if (MODE === 'deck') openPresenter(); break;
+      case 'b': case 'B': case '.': document.body.classList.toggle('blackout'); break;
+    }
+  });
+  function showJump() { const j = document.querySelector('.deck-jump'); if (!j) return; j.textContent = `→ ${jumpBuf}`; j.style.display = jumpBuf ? 'block' : 'none'; }
+
+  /* ---------- touch swipe (ignored on demo controls) ---------- */
+  let tx = null, ty = null;
+  document.addEventListener('touchstart', e => {
+    if (e.target.closest('.demo, input, button, [data-capture-pointer]')) { tx = null; return; }
+    tx = e.touches[0].clientX; ty = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (tx === null) return;
+    const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) dx < 0 ? next() : prev();
+    tx = null;
+  });
+
+  /* ---------- presenter view ---------- */
+  function openPresenter() {
+    const base = location.href.split('#')[0].split('?')[0];
+    presenterWin = window.open(`${base}?presenter#${cur + 1}.${step}`, 'deck-presenter', 'width=1280,height=800');
+  }
+  window.addEventListener('message', e => {
+    const d = e.data || {};
+    if (d.type === 'deck-goto') show(d.i, d.step, 'presenter');
+    if (d.type === 'deck-state') show(d.i, d.step, 'opener');
+  });
+  let pui = null, t0 = null, timerId = null;
+  function buildPresenter() {
+    document.body.classList.add('presenter');
+    const base = location.href.split('#')[0].split('?')[0];
+    pui = document.createElement('div');
+    pui.className = 'presenter-ui';
+    pui.innerHTML = `<div class="p-head"><span class="p-count"></span><span class="p-timer" title="클릭하면 초기화">00:00</span><span class="p-clock"></span></div>
+      <div class="p-frames"><iframe class="p-cur" src="${base}?embed"></iframe><iframe class="p-next" src="${base}?embed"></iframe></div>
+      <div class="p-notes"></div>`;
+    document.body.appendChild(pui);
+    pui.querySelector('.p-timer').addEventListener('click', () => { t0 = Date.now(); });
+    pui.querySelectorAll('iframe').forEach(f => f.addEventListener('load', updatePresenter));
+    t0 = Date.now();
+    timerId = setInterval(() => {
+      const s = Math.floor((Date.now() - t0) / 1000);
+      pui.querySelector('.p-timer').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+      pui.querySelector('.p-clock').textContent = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    }, 500);
+  }
+  function updatePresenter() {
+    if (!pui) return;
+    const n = stepsOf(slides[cur]).length;
+    const [ni, ns] = step < n ? [cur, step + 1] : [Math.min(cur + 1, slides.length - 1), 0];
+    pui.querySelector('.p-count').textContent = `${cur + 1} / ${slides.length}${n ? `  (step ${step}/${n})` : ''}`;
+    pui.querySelector('.p-cur').contentWindow?.postMessage({ type: 'deck-embed', i: cur, step }, '*');
+    pui.querySelector('.p-next').contentWindow?.postMessage({ type: 'deck-embed', i: ni, step: ns }, '*');
+    const notes = slides[cur].querySelector('aside.notes');
+    pui.querySelector('.p-notes').textContent = notes ? notes.textContent.trim() : '(노트 없음)';
+  }
+  if (MODE === 'embed') {
+    document.body.classList.add('embed');
+    window.addEventListener('message', e => { if (e.data && e.data.type === 'deck-embed') show(e.data.i, e.data.step, 'embed'); });
+  }
+
+  /* ---------- demo API ---------- */
+  let lastT = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
+    demos.forEach(d => { if (d.slide === slides[cur]) d.frames.forEach(fn => safe(d, fn, dt)); });
+    requestAnimationFrame(frame);
+  }
+  const Deck = {
+    get index() { return cur; }, get step() { return step; }, slides, errors, mode: MODE,
+    reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    go: show, next, prev, demos,
+    demo(target, hooks) {
+      const el = typeof target === 'string' ? document.querySelector(target) : target;
+      if (!el) { errors.push(`demo target not found: ${target}`); return; }
+      const d = { el, hooks, name: el.id || target, slide: slideOf(el), frames: [], resizers: [], mounted: false };
+      const api = {
+        raf: fn => d.frames.push(fn),
+        onResize: fn => d.resizers.push(fn),
+        size: c => ({ w: c.clientWidth, h: c.clientHeight }),
+        fitCanvas(c) {
+          const ctx = c.getContext('2d');
+          const sync = () => { const r = window.devicePixelRatio || 1; c.width = c.clientWidth * r; c.height = c.clientHeight * r; ctx.setTransform(r, 0, 0, r, 0, 0); };
+          sync(); d.resizers.unshift(sync); return ctx;
+        },
+        bindRange(name, onInput, fmt = v => v) {
+          const inp = el.querySelector(`input[name="${name}"]`), out = el.querySelector(`[data-out="${name}"]`);
+          const upd = () => { const v = parseFloat(inp.value); if (out) out.textContent = fmt(v); onInput(v); };
+          inp.addEventListener('input', upd); if (out) out.textContent = fmt(parseFloat(inp.value));
+          return inp;
+        }
+      };
+      demos.push(d);
+      if (hooks.mount) safe(d, hooks.mount, el, api);
+      d.mounted = true;
+      if (d.slide === slides[cur] && hooks.enter) safe(d, hooks.enter, el);
+    }
+  };
+  window.Deck = Deck;
+
+  /* ---------- boot ---------- */
+  document.body.insertAdjacentHTML('beforeend', '<div class="deck-progress"></div><div class="deck-counter"></div><div class="deck-jump"></div><div class="deck-black"></div>');
+  window.addEventListener('resize', fit);
+  const [hi, hs] = parseHash();
+  show(hi, hs, 'boot');
+  fit();
+  requestAnimationFrame(frame);
+  if (MODE === 'presenter') { buildPresenter(); updatePresenter(); }
+  const renderMath = () => {
+    if (window.renderMathInElement) renderMathInElement(document.body, {
+      delimiters: [{ left: '$$', right: '$$', display: true }, { left: '\\(', right: '\\)', display: false }, { left: '\\[', right: '\\]', display: true }],
+      throwOnError: false, output: 'mathml'
+    });
+  };
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', renderMath) : renderMath();
+  window.addEventListener('load', fit);
+})();
+</script>
+</body>
+</html>
