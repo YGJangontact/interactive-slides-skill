@@ -6,6 +6,11 @@ speaker notes / presenter view, and an automatic layout check — built by Claud
 인터랙티브 데모가 들어간 HTML 발표자료를 Claude Code로 만드는 스킬입니다. 슬라이더를 움직이면 그래프가
 다시 그려지고, 버튼을 누르면 알고리즘이 한 단계씩 진행되는 슬라이드를 HTML 파일 하나로 만듭니다.
 
+**▶ 바로 열어 보기 (GitHub Pages):**
+[경사하강법과 학습률](https://ygjangontact.github.io/interactive-slides-skill/examples/gradient-descent/deck.html#4) ·
+[Attention 메커니즘 리뷰](https://ygjangontact.github.io/interactive-slides-skill/examples/attention-review/deck.html#6) ·
+[예제 목록](https://ygjangontact.github.io/interactive-slides-skill/)
+
 ![learning-rate demo](docs/demo-learning-rate.png)
 
 ## 무엇이 들어 있나
@@ -65,7 +70,7 @@ Copy-Item -Recurse interactive-slides-skill\skills\interactive-slides $HOME\.cla
 4. 브라우저에서 `check_deck.js`로 검증
 5. 파일 전달, 원하면 PDF나 claude.ai 아티팩트 링크로 공유
 
-`examples/`에 이렇게 만든 덱 두 개가 있습니다. 브라우저로 바로 열어 볼 수 있습니다.
+`examples/`에 이렇게 만든 덱 두 개가 있습니다. 내려받아 브라우저로 열거나, 위 GitHub Pages 링크에서 바로 볼 수 있습니다.
 
 - `examples/gradient-descent/deck.html`: 학습률 슬라이더 데모, 2D 골짜기 데모
 - `examples/attention-review/deck.html`: attention 가중치 단계별 계산 데모
