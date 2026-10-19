@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>interactive-slides 예제</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+:root { --bg: #f6f5f1; --card: #ffffff; --line: #dcdad2; --text: #1d1f24; --muted: #5d6068; --accent: #1f5fbf; }
+@media (prefers-color-scheme: dark) { :root { --bg: #15171c; --card: #1f222a; --line: #343a48; --text: #f1f0ec; --muted: #a3a8b4; --accent: #7fb0ff; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', system-ui, sans-serif; line-height: 1.6; }
+main { max-width: 960px; margin: 0 auto; padding: 48px 16px 64px; }
+h1 { font-size: 30px; margin: 0 0 8px; }
+p.lead { color: var(--muted); margin: 0 0 32px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+a.card { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; color: inherit; text-decoration: none; }
+a.card:hover { border-color: var(--accent); }
+a.card img { display: block; width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+a.card div { padding: 14px 16px 18px; }
+a.card h2 { font-size: 19px; margin: 0 0 4px; }
+a.card p { margin: 0; color: var(--muted); font-size: 15px; }
+.keys { margin-top: 32px; color: var(--muted); font-size: 15px; }
+code { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>interactive-slides 예제 덱</h1>
+  <p class="lead">Claude Code 스킬 <a href="https://github.com/YGJangontact/interactive-slides-skill">interactive-slides</a>로 만든 HTML 발표자료입니다. 열어서 슬라이더와 버튼을 직접 조작해 보세요.</p>
+  <div class="grid">
+    <a class="card" href="examples/gradient-descent/deck.html#4">
+      <img src="docs/demo-learning-rate.png" alt="학습률 슬라이더 데모 슬라이드">
+      <div><h2>경사하강법과 학습률</h2><p>강의용 · 8장 · 학습률 슬라이더 데모, 2D 골짜기 데모</p></div>
+    </a>
+    <a class="card" href="examples/attention-review/deck.html#6">
+      <img src="docs/demo-attention-steps.png" alt="attention 단계별 계산 데모 슬라이드">
+      <div><h2>Attention 메커니즘 리뷰</h2><p>학술용 · 9장 · 토큰별 attention 가중치 단계별 계산 데모</p></div>
+    </a>
+  </div>
+  <p class="keys">키: <code>→</code>/<code>Space</code> 다음 · <code>←</code> 이전 · 숫자+<code>Enter</code> 이동 · <code>F</code> 전체화면 · <code>S</code> 발표자 화면 · <code>Esc</code> 데모 컨트롤에서 빠져나오기</p>
+</main>
+</body>
+</html>
