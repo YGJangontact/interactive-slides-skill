@@ -19,13 +19,24 @@ folder over localhost first:
    (`python3` elsewhere) — then `preview_start` it and navigate to the deck.
 2. Copy `scripts/check_deck.js` from this skill into the deck folder and run in the page:
    `await eval(await (await fetch('check_deck.js')).text())`. It walks every slide with all steps
-   shown and reports: elements spilling outside 1920×1080, clipped boxes, text under 22px, duplicate
-   ids, a keyboard walk that doesn't reach the end, demo errors, unregistered `.demo`s, unpinned CDN
-   URLs. Fix every `problems` entry; consider the `warn` entries.
-   Delete the copied `check_deck.js` afterwards — it isn't part of the deck.
-3. Drive each demo once (set an input + dispatch `input`, read the `<output>`), and screenshot the
-   cover, one content slide and each demo slide to eyeball the layout.
-4. Fonts and KaTeX come from CDNs; if the pane is offline the deck falls back to system fonts —
+   shown and reports: elements spilling outside 1920×1080; content running out of its card, row or
+   demo stage; `overflow: hidden` boxes hiding content; stacked blocks or grid siblings overlapping;
+   text under 22px; duplicate ids; a keyboard walk that doesn't reach the end; demo and chart errors;
+   unregistered `.demo`s; unpinned CDN URLs. Warnings: bottom gaps over 180 px, text-heavy slides
+   overlapping text labels inside an SVG, and charts or figures without `data-src`. Fix every `problems` entry; act on the warnings unless the slide is meant to be read (a
+   table, a formula appendix). Delete the copied `check_deck.js` afterwards.
+3. Drive each demo once (set an input + dispatch `input`, read the `<output>`).
+4. Look at every changed slide as an image:
+   `py scripts/render_slides.py http://localhost:<port>/<deck>.html <outdir> --slides 3,5-9`
+   writes `sNN.png` plus contact sheets of 6. `--mode pdf` (default) has the same layout as the screen
+   and paints formulas; `--mode screen` (headless screenshots) leaves formulas unpainted and is only
+   for when the print path itself is in doubt. Look for what the check can't see: a lone word on a second title line, a chart that misleads, a colour that means
+   something else elsewhere in the deck.
+5. Browser pane quirks: navigating to the same URL with another `#N` doesn't change the slide (call
+   `Deck.go(n - 1)` in the page); pane screenshots time out while the pane is hidden (use the step 4
+   images); a dev server started by another session may be unreachable from this one — start your
+   own on a free port with `"autoPort": false` so the command's port and the URL stay in sync.
+6. Fonts and KaTeX come from CDNs; if the pane is offline the deck falls back to system fonts —
    that's expected, not a bug.
 
 ## 3. PDF (on request)
