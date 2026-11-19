@@ -21,7 +21,7 @@ interactive-slides 덱(1920×1080 고정 무대, `.slide.active`로 장 전환, 
 | ID | 클래스 | 붙이는 곳 |
 |---|---|---|
 | T1 | `.m-words` (+ `.m-rise`) | 제목 h1/h2 (+ 부제) |
-| S1 | `.m-circle` | `section.slide.statement` |
+| S1 | `.m-circle` | `section.slide.divider` 또는 `.conclusion`(`.conclusion.solid`, 예전 `.statement`) |
 | D1 | `.m-count` | 숫자 요소(`.kpi b`, `.big-number`) |
 | D2 | `.m-grow` | `figure.viz` (hbars, groups) |
 | F1 | `.m-flow` | 손으로 그린 흐름도 `<svg>` |
@@ -30,6 +30,20 @@ interactive-slides 덱(1920×1080 고정 무대, `.slide.active`로 장 전환, 
 | E1 | `.m-spot` | `fade` 행이 있는 `figure.viz` |
 | E2 | `.m-sweep` | 문장 속 구절 `<span>` |
 | E3 | `.m-wipe` | 같은 크기 두 층을 담은 컨테이너 |
+
+### 프리셋별로 어울리는 클래스
+
+`design.md` "Presets"의 다섯 프리셋 기준. "맞음"은 톤에 맞는 기본 선택, "피함"은 톤과 부딪히는 것(금지는 아님, 내 판단). 프리셋과 무관하게 한 장에 한 패턴.
+
+| 프리셋 | 맞음 | 피함 |
+|---|---|---|
+| `academic` | T1, D1, D2, R1, E1, E2, S1(결론 장) | — |
+| `lecture` | T1, S1, D1, D2, F1, E3 | — |
+| `paper` | T1(표지), D1(큰 숫자 하나), E2(형광펜), R1 | S1 원형 전환(조용한 지면 톤과 안 맞음), F2 모핑 |
+| `stage` | T1 + `.m-rise`(표지), F1(어두운 판 위 흐름도), D1, D2, S1(섹션·결론 장), E3 | E2(어두운 바탕에서 형광펜 띠가 탁해짐) |
+| `grid` | R1(단계 카드), D2(막대), F1 | S1 원형 전환, E2 스윕(빨강 밑줄은 결론 띠 하나에만) |
+
+섹션 진행 띠(`data-progress="sections"`)는 움직이지 않는다. 장마다 정적인 표시라 모션 규칙과 겹치지 않는다.
 
 ## 한눈에 보기
 
@@ -89,13 +103,13 @@ interactive-slides 덱(1920×1080 고정 무대, `.slide.active`로 장 전환, 
 ## 섹션 전환
 
 ### S1 원형 클립 확장
-- **모습**: 화면 한 귀퉁이 점에서 원이 커지며 섹션 슬라이드(강조색 배경)가 열린다.
+- **모습**: 화면 한 귀퉁이 점에서 원이 커지며 섹션 슬라이드(또는 결론 장)가 열린다.
 - **출처**: MDN View Transitions 예제(CC0).
 - **기술·저사양**: `clip-path: circle()` 키프레임. 저사양 예.
 - **PDF/정지**: 섹션 슬라이드 전체.
 - **동작 줄이기**: 즉시 표시.
-- **재현 프롬프트 요약**: "statement 슬라이드에 클래스 하나를 주고, 활성 시 circle(0% at 8% 92%) → circle(150% at 8% 92%) 0.9초, ease-in-out."
-- **템플릿 클래스**: `<section class="slide statement m-circle">`. 원 중심은 왼쪽 아래(8% 92%) 고정.
+- **재현 프롬프트 요약**: "섹션·결론 슬라이드에 클래스 하나를 주고, 활성 시 circle(0% at 8% 92%) → circle(150% at 8% 92%) 0.9초, ease-in-out."
+- **템플릿 클래스**: `<section class="slide divider m-circle" data-num="02">`(중립 섹션 장) 또는 `<section class="slide conclusion m-circle">`(결론 장: 중립 바탕 + 강조색 선. 강조색 전면 바탕은 `.conclusion.solid`, 예전 `.statement`도 동작). 원 중심은 왼쪽 아래(8% 92%) 고정.
 - **주의**: 섹션 경계에만(덱 전체 2–4회). 장 크로스페이드(0.35초)와 겹쳐 보인다. 템플릿은 `?motion`일 때 OS의 동작 줄이기 설정을 무시하므로 리허설에서도 같은 모습이 나온다.
 
 ### S2 공유 요소 확대
@@ -218,7 +232,7 @@ interactive-slides 덱(1920×1080 고정 무대, `.slide.active`로 장 전환, 
 - **PDF/정지**: 칠해진 띠.
 - **동작 줄이기**: 칠해진 띠.
 - **재현 프롬프트 요약**: "구절 span에 아래 40% 높이 그라데이션 배경을 깔고, 활성 시 0.5초 지연 후 0.9초 동안 background-size 가로를 0에서 100%로."
-- **템플릿 클래스**: `<span class="m-sweep">핵심 구절</span>`(`.hl`·`.hl2`와 함께 쓰면 그 색). statement 슬라이드에서는 배경색 띠로 바뀐다. 줄바꿈되면 줄마다 칠한다(`box-decoration-break: clone`).
+- **템플릿 클래스**: `<span class="m-sweep">핵심 구절</span>`(`.hl`·`.hl2`와 함께 쓰면 그 색). 기본 `.conclusion`에서는 강조색 띠 그대로이고, 강조색 바탕인 `.conclusion.solid`(`.statement`)에서는 배경색 띠로 바뀐다. 줄바꿈되면 줄마다 칠한다(`box-decoration-break: clone`).
 - **주의**: 구절이 줄바꿈되면 띠가 줄마다 따로 칠해지지 않고 한 덩어리로 움직인다(`box-decoration-break: clone` 고려). 문장당 한 곳.
 
 ### E3 렌즈·와이프 비교

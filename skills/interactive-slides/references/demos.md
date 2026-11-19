@@ -22,8 +22,9 @@ If a still image says it equally well, use the image.
 - **Deterministic.** Seed any randomness (`mulberry32` below) so rehearsal and the live talk match.
 - **Offline-safe core.** Core demos are plain canvas/SVG with no network. Anything loaded from a CDN
   must be version-pinned and have a visible fallback if it fails.
-- **Colors from tokens.** Read `getComputedStyle(document.body).getPropertyValue('--accent')` etc.,
-  so the demo follows the preset.
+- **Colors from tokens.** Read `getComputedStyle(el).getPropertyValue('--accent')` etc. on the
+  demo's own element (not `document.body`), so the demo follows its slide's preset, including a
+  per-slide `data-preset`.
 - **Motion respects `Deck.reducedMotion`**: draw the end state instead of animating. `?motion` in the URL forces motion on and `?reduced` forces it off (the template sets `html.force-motion` / `html.force-reduce`); entrance patterns are in `references/motion.md`. For count-up numbers, growing bars, flow drawing or a box morph, use the template's `m-` classes (motion.md "템플릿 클래스") rather than a demo; write a `Deck.demo` only when the motion needs controls.
 
 Canvas vs SVG: canvas (`api.fitCanvas`) for plots with many points or per-frame animation; SVG for
