@@ -150,6 +150,53 @@ figure.viz { margin: 0; width: 100%; } figure.viz svg { display: block; overflow
 .vstrip .kpi { padding: 8px 16px; } .vstrip .kpi b { font-size: 38px; } .vstrip .kpi span { font-size: 22px; line-height: 1.3; }
 
 /* ===========================================
+   MOTION — opt-in m- classes (references/motion.md "템플릿 클래스"). At most one pattern per slide.
+   Final state is the default: print/PDF, reduced motion, no JS and presenter previews all show it.
+   Animations run only on screen under html.motion (set by the runtime when Deck.reducedMotion is false)
+   and replay each time a slide becomes active. Keyframes define only the start; fill "backwards".
+   T1 .m-words title + .m-rise subtitle · S1 .slide.m-circle · D1 .m-count · D2 figure.viz.m-grow
+   F1 svg.m-flow (.edges / .nodes children with --i, .back last) · F2 .m-morph [data-from]
+   R1 .m-dim (shown steps dim) · E1 figure.viz.m-spot (fade rows) · E2 .m-sweep · E3 .m-wipe (--at)
+   =========================================== */
+.m-count { font-variant-numeric: tabular-nums; }
+.m-words .w { display: inline-block; }
+.m-sweep { background-repeat: no-repeat; background-size: 100% 100%; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.m-sweep:not(.hl):not(.hl2) { background-image: linear-gradient(transparent 58%, color-mix(in srgb, var(--accent) 22%, transparent) 58%); font-weight: 700; }
+.slide.statement .m-sweep:not(.hl):not(.hl2) { background-image: linear-gradient(transparent 60%, color-mix(in srgb, var(--bg) 35%, transparent) 60%); }
+.m-wipe { --at: 50%; position: relative; display: grid; min-height: 0; }
+.m-wipe > * { grid-area: 1 / 1; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.m-wipe > :last-child { clip-path: inset(0 0 0 var(--at)); }
+.m-wipe::after { content: ''; position: absolute; top: 0; bottom: 0; left: var(--at); width: 4px; margin-left: -2px; background: var(--accent); }
+@media screen { .m-dim .step.shown:has(~ .step.shown) { opacity: .45; } } /* information, not motion: kept under reduced motion */
+
+@keyframes m-rise { from { opacity: 0; transform: translateY(.45em); } }
+@keyframes m-fade { from { opacity: 0; } }
+@keyframes m-circle { from { clip-path: circle(0% at 8% 92%); } to { clip-path: circle(150% at 8% 92%); } }
+@keyframes m-grow-x { from { transform: scaleX(0); } }
+@keyframes m-grow-y { from { transform: scaleY(0); } }
+@keyframes m-draw { from { stroke-dashoffset: 1; } }
+@keyframes m-pop { from { opacity: 0; transform: scale(.88); } }
+@keyframes m-undim { from { opacity: 1; } }
+@keyframes m-sweep { from { background-size: 0% 100%; } }
+@keyframes m-wipe { from { clip-path: inset(0 0 0 100%); } }
+@keyframes m-wipe-line { from { left: 100%; } }
+@media screen {
+  html.motion .slide.active .m-words .w { animation: m-rise .7s var(--ease) calc(var(--i, 0) * 90ms + 150ms) backwards; }
+  html.motion .slide.active .m-rise { animation: m-rise .7s var(--ease) var(--d, .9s) backwards; }
+  html.motion .slide.active.m-circle { animation: m-circle .9s cubic-bezier(.65, 0, .35, 1) backwards; }
+  html.motion .slide.active figure.viz.m-grow .bar { transform-box: fill-box; transform-origin: left center; animation: m-grow-x .8s var(--ease) calc(var(--i, 0) * 110ms + 200ms) backwards; }
+  html.motion .slide.active figure.viz.m-grow[data-kind="groups"] .bar { transform-origin: center bottom; animation-name: m-grow-y; }
+  html.motion .slide.active figure.viz.m-grow .val { animation: m-fade .4s ease calc(var(--i, 0) * 110ms + 700ms) backwards; }
+  html.motion .slide.active .m-flow .edges > * { stroke-dasharray: 1; animation: m-draw .45s ease-out calc(var(--i, 0) * var(--m-step, 420ms) + 260ms) backwards; }
+  html.motion .slide.active .m-flow .nodes > * { transform-box: fill-box; transform-origin: center; animation: m-pop .5s var(--ease) calc(var(--i, 0) * var(--m-step, 420ms)) backwards; }
+  html.motion .slide.active .m-flow .back { animation-duration: .8s; animation-delay: var(--m-back, 2.4s); }
+  html.motion .slide.active figure.viz.m-spot .bar.fade { animation: m-undim .6s ease 1.1s backwards; }
+  html.motion .slide.active .m-sweep { animation: m-sweep .9s var(--ease) .5s backwards; }
+  html.motion .slide.active .m-wipe > :last-child { animation: m-wipe 1s var(--ease) .3s backwards; }
+  html.motion .slide.active .m-wipe::after { animation: m-wipe-line 1s var(--ease) .3s backwards; }
+}
+
+/* ===========================================
    DECK CHROME (outside the stage; hidden in print and embeds)
    =========================================== */
 .deck-progress { position: fixed; left: 0; bottom: 0; height: 4px; background: var(--accent); transition: width .3s var(--ease); z-index: 1000; }
@@ -193,20 +240,21 @@ html.force-reduce *, html.force-reduce *::before, html.force-reduce *::after { a
 
 <section class="slide cover" id="cover">
   <p class="kicker">Lab Meeting · 2026.10</p>
-  <h1>슬라이드 제목을 여기에</h1>
-  <p class="lead">한 줄 부제 — 이 발표에서 무엇을 얻어 가는지</p>
-  <aside class="notes">발표자 노트: 인사와 발표 목적.</aside>
+  <h1 class="m-words">슬라이드 제목을 여기에</h1>
+  <p class="lead m-rise">한 줄 부제 — 이 발표에서 무엇을 얻어 가는지</p>
+  <aside class="notes">발표자 노트: 인사와 발표 목적.
+(모션 예시 T1: .m-words 제목 단어 등장 + .m-rise 부제. 클래스를 지우면 정지 제목.)</aside>
 </section>
 
 <section class="slide" id="outline">
   <p class="kicker">Overview</p>
   <h2>오늘 다룰 세 가지</h2>
-  <ul class="points">
+  <ul class="points m-dim">
     <li class="step">문제 정의 — 왜 이게 어려운가</li>
     <li class="step">핵심 아이디어 — 수식 \( y = A\sin(2\pi f t) \) 하나로 설명</li>
     <li class="step">직접 만져 보는 데모</li>
   </ul>
-  <aside class="notes">→ 키를 누를 때마다 한 줄씩 나타남.</aside>
+  <aside class="notes">→ 키를 누를 때마다 한 줄씩 나타나고 앞 줄은 흐려짐(R1 .m-dim, 화면 전용).</aside>
 </section>
 
 <section class="slide" id="result">
@@ -215,7 +263,7 @@ html.force-reduce *, html.force-reduce *::before, html.force-reduce *::after { a
   <div class="vrow" style="grid-template-columns: 1.55fr 1fr">
     <div class="vcard">
       <h3>정답률 · 예시 숫자 [__]</h3>
-      <figure class="viz" data-kind="hbars" data-h="380" data-src="[원 결과 파일 · 표/절]"><script type="application/json">
+      <figure class="viz m-grow" data-kind="hbars" data-h="380" data-src="[원 결과 파일 · 표/절]"><script type="application/json">
         {"lw":300,"max":60,"ticks":[0,20,40,60],"rows":[
           {"l":"기준 모델","v":40.0,"c":"g"},
           {"l":"비교 모델","v":41.0,"c":"b"},
@@ -224,12 +272,13 @@ html.force-reduce *, html.force-reduce *::before, html.force-reduce *::after { a
       <p class="cap">출처와 조건은 캡션이나 노트에</p>
     </div>
     <div class="kpis">
-      <div class="kpi"><b>+0.60</b><span>핵심 수치 [구간]</span></div>
+      <div class="kpi"><b class="m-count">+0.60</b><span>핵심 수치 [구간]</span></div>
       <div class="kpi"><b>15 / 16</b><span>보조 수치</span></div>
     </div>
   </div>
   <p class="take">이 슬라이드가 말하는 한 가지를 <span class="hl">여기만</span> 강조한다.</p>
-  <aside class="notes">세부 표·식·출처는 노트로. 숫자는 원 파일에서 옮기고 파일 이름을 적는다.</aside>
+  <aside class="notes">세부 표·식·출처는 노트로. 숫자는 원 파일에서 옮기고 파일 이름을 적는다.
+(모션 예시 D2 .m-grow 막대 성장 + D1 .m-count 카운트업. 마크업의 값이 최종값이다.)</aside>
 </section>
 
 <section class="slide" id="demo-wave">
@@ -285,9 +334,9 @@ window.addEventListener('DOMContentLoaded', () => {
     rows.forEach((r, i) => {
       const yc = top + rh * (i + .5);
       tx(svg, x0 - 16, yc + 9, r.l, { 'text-anchor': 'end', fill: C.ink, 'font-size': r.b ? 27 : 25, 'font-weight': r.b ? 700 : 500 });
-      el('rect', { x: x0, y: yc - bh / 2, width: Math.max(X(r.v) - x0, 3), height: bh, rx: 8, fill: col(r.c), opacity: r.fade ? .4 : 1 }, svg);
+      el('rect', { x: x0, y: yc - bh / 2, width: Math.max(X(r.v) - x0, 3), height: bh, rx: 8, fill: col(r.c), opacity: r.fade ? .4 : 1, class: r.fade ? 'bar fade' : 'bar', style: `--i:${i}` }, svg);
       if (r.lo != null) el('line', { x1: X(r.lo), x2: X(r.hi), y1: yc, y2: yc, stroke: C.ink, 'stroke-width': 3 }, svg);
-      tx(svg, X(Math.max(r.v, r.hi ?? 0)) + 12, yc + 9, r.t ?? `${fmt(r.v, d)}${d.unit ?? '%'}`, Object.assign({ fill: r.b ? col(r.c) : C.ink, 'font-size': r.b ? 30 : 26, 'font-weight': 700 }, mono));
+      tx(svg, X(Math.max(r.v, r.hi ?? 0)) + 12, yc + 9, r.t ?? `${fmt(r.v, d)}${d.unit ?? '%'}`, Object.assign({ fill: r.b ? col(r.c) : C.ink, 'font-size': r.b ? 30 : 26, 'font-weight': 700, class: 'val', style: `--i:${i}` }, mono));
     });
     if (d.ref != null) { el('line', { x1: X(d.ref), x2: X(d.ref), y1: top, y2: H - bot, stroke: C.ink, 'stroke-dasharray': '8 6', 'stroke-width': 2.5 }, svg); if (d.refl) tx(svg, X(d.ref) + 8, top + 22, d.refl, { fill: C.ink, 'font-size': 22 }); }
   }
@@ -312,10 +361,11 @@ window.addEventListener('DOMContentLoaded', () => {
   function groups(svg, d, W, H) {
     const [L, R, T, B] = [70, W - 10, 40, H - (d.legend ? 96 : 56)], max = d.max || 100;
     const Y = v => B - (B - T) * v / max, gw = (R - L) / d.groups.length;
+    let i = 0; // bar index across groups: --i drives the m-grow stagger
     (d.yt || [0, max / 2, max]).forEach(v => { el('line', { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: C.line, 'stroke-width': 2 }, svg); tx(svg, L - 10, Y(v) + 8, `${v}${d.unit ?? '%'}`, { 'text-anchor': 'end', 'font-size': 22 }); });
     d.groups.forEach((g, gi) => {
       const n = g.bars.length, bw = Math.min((gw - 40) / n, d.bw || 90), x0 = L + gi * gw + (gw - bw * n - 8 * (n - 1)) / 2;
-      g.bars.forEach((b, k) => { const x = x0 + k * (bw + 8); el('rect', { x, y: Y(b.v), width: bw, height: B - Y(b.v), rx: 8, fill: col(b.c) }, svg); tx(svg, x + bw / 2, Y(b.v) - 10, b.t ?? fmt(b.v, d), Object.assign({ 'text-anchor': 'middle', fill: C.ink, 'font-size': 25, 'font-weight': 700 }, mono)); });
+      g.bars.forEach((b, k) => { const x = x0 + k * (bw + 8), st = `--i:${i++}`; el('rect', { x, y: Y(b.v), width: bw, height: B - Y(b.v), rx: 8, fill: col(b.c), opacity: b.fade ? .4 : 1, class: b.fade ? 'bar fade' : 'bar', style: st }, svg); tx(svg, x + bw / 2, Y(b.v) - 10, b.t ?? fmt(b.v, d), Object.assign({ 'text-anchor': 'middle', fill: C.ink, 'font-size': 25, 'font-weight': 700, class: 'val', style: st }, mono)); });
       tx(svg, L + gi * gw + gw / 2, B + 36, g.l, { 'text-anchor': 'middle', fill: C.ink, 'font-size': 25, 'font-weight': g.b ? 700 : 500 });
     });
     if (d.legend) { let x = L; d.legend.forEach(([s, c]) => { el('rect', { x, y: H - 34, width: 26, height: 26, rx: 5, fill: col(c) }, svg); const t = tx(svg, x + 36, H - 13, s, { fill: C.ink, 'font-size': 24 }); x += 36 + t.getComputedTextLength() + 36; }); }
@@ -345,6 +395,66 @@ window.addEventListener('DOMContentLoaded', () => {
       const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': fig.dataset.label || '' }, fig);
       K[fig.dataset.kind](svg, d, W, H);
     } catch (e) { fig.setAttribute('data-demo-error', 'viz: ' + e.message); (window.Deck?.errors || []).push('viz: ' + e.message); }
+  });
+});
+</script>
+
+<script>
+/* ===========================================
+   MOTION — the JS half of the opt-in m- classes (CSS: MOTION block in the style sheet). Leave as is.
+   Does nothing without html.motion, so the markup's own text and attributes are the final state.
+   .m-words  splits a heading into word spans (words, not letters: keeps Korean keep-all wrapping)
+   .m-count  counts the first number in its text up from 0 on each slide entry (sign, decimals, commas kept)
+   .m-morph  children with data-from="x:80 y:230 width:240" move from those values to their own attributes
+   .m-flow   gives .edges paths pathLength=1 so the draw animation fits any path
+   =========================================== */
+window.addEventListener('DOMContentLoaded', () => {
+  const on = () => document.documentElement.classList.contains('motion');
+  document.querySelectorAll('.m-flow .edges path:not([pathLength])').forEach(p => p.setAttribute('pathLength', 1));
+  if (on()) document.querySelectorAll('.m-words').forEach(h => {
+    let i = 0;
+    [...h.childNodes].forEach(n => {
+      if (n.nodeType === 1 && n.tagName !== 'BR') { n.classList.add('w'); n.style.setProperty('--i', i++); return; }
+      if (n.nodeType !== 3) return;
+      const f = document.createDocumentFragment();
+      n.nodeValue.split(/(\s+)/).forEach(w => {
+        if (!w) return;
+        if (/^\s+$/.test(w)) return f.append(w);
+        const s = document.createElement('span'); s.className = 'w'; s.style.setProperty('--i', i++); s.textContent = w; f.append(s);
+      });
+      n.replaceWith(f);
+    });
+  });
+  const outCubic = t => 1 - Math.pow(1 - t, 3), inOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  Deck.slides.forEach(slide => {
+    const counts = [...slide.querySelectorAll('.m-count')].map(el => {
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for (let n; (n = w.nextNode());) {
+        const m = n.nodeValue.match(/\d[\d,]*(\.\d+)?/);
+        if (m) return { n, text: n.nodeValue, at: m.index, len: m[0].length, v: +m[0].replace(/,/g, ''), dec: m[1] ? m[1].length - 1 : 0, comma: m[0].includes(',') };
+      }
+    }).filter(Boolean);
+    const morphs = [...slide.querySelectorAll('.m-morph [data-from]')].map(el => {
+      const from = {}, to = {}, raw = {};
+      el.dataset.from.trim().split(/[\s;]+/).forEach(p => { const [k, v] = p.split(':'); raw[k] = el.getAttribute(k); from[k] = parseFloat(v); to[k] = parseFloat(raw[k]); });
+      return { el, from, to, raw };
+    });
+    if (!counts.length && !morphs.length) return;
+    const num = (c, v) => c.comma ? v.toLocaleString('en-US', { minimumFractionDigits: c.dec, maximumFractionDigits: c.dec }) : v.toFixed(c.dec);
+    const paint = t => {
+      const a = outCubic(Math.min(1, t / 1.1)), b = inOut(Math.max(0, Math.min(1, (t - .6) / 1.2))); // count 1.1 s; morph holds .6 s, moves 1.2 s
+      counts.forEach(c => { c.n.nodeValue = c.text.slice(0, c.at) + num(c, c.v * a) + c.text.slice(c.at + c.len); });
+      morphs.forEach(m => { for (const k in m.to) m.el.setAttribute(k, (m.from[k] + (m.to[k] - m.from[k]) * b).toFixed(1)); });
+    };
+    const finish = () => {
+      counts.forEach(c => { c.n.nodeValue = c.text; });
+      morphs.forEach(m => { for (const k in m.raw) m.el.setAttribute(k, m.raw[k]); });
+    };
+    Deck.demo(slide, {
+      mount(el, api) { this.t = null; api.raf(dt => { if (this.t === null) return; this.t += dt; this.t >= 1.8 ? (this.t = null, finish()) : paint(this.t); }); },
+      enter() { if (on()) { this.t = 0; paint(0); } },
+      leave() { this.t = null; finish(); }
+    });
   });
 });
 </script>
@@ -569,6 +679,9 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   };
   window.Deck = Deck;
+  // Motion switch for the m- classes: on unless reduced motion (OS setting or ?reduced; ?motion forces it on).
+  // Presenter previews (?embed) stay on final states.
+  document.documentElement.classList.toggle('motion', !Deck.reducedMotion && MODE !== 'embed');
 
   /* ---------- boot ---------- */
   document.body.insertAdjacentHTML('beforeend', '<div class="deck-progress"></div><div class="deck-counter"></div><div class="deck-jump"></div><div class="deck-black"></div>');

@@ -119,6 +119,9 @@ kicker · flow line (앞 결과 → 질문 → 이 실험) · h2 on ONE line
 - Mark values that are worked examples or computed from a rule rather than measured, in the label
   ("계산 예시", `해석`). A chart looks like data either way.
 - Emphasis budget: one `.hl` in the `.take` line; inside the chart the bold row is the highlight.
+- Optional motion (one pattern per slide, final state is the static slide): `figure.viz.m-grow` grows the
+  bars from 0 and `.kpi b.m-count` counts the number up, as on the sample `#result`; `figure.viz.m-spot`
+  dims the `fade` rows after a beat. Classes and markup: `references/motion.md` "템플릿 클래스".
 
 ## Layout pitfalls (each cost a round of fixes once)
 

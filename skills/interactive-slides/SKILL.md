@@ -36,7 +36,7 @@ Give each line a layout note too: the slide's job → its arrangement → where 
 `7 [비교] 2열: 왼쪽 수식, 오른쪽 곡선 — 초점은 최적점`. It forces a layout decision per slide
 before any HTML exists.
 A demo is worth it only where seeing a value change explains more than a figure; typically one demo
-per 4–6 slides, never two in a row. Pick a pattern from `references/demos.md` for each. For entrance, transition or emphasis motion (not interactive demos), pick from `references/motion.md` — at most one motion pattern per slide, final state readable without it.
+per 4–6 slides, never two in a row. Pick a pattern from `references/demos.md` for each. For entrance, transition or emphasis motion (not interactive demos), pick from `references/motion.md` — at most one motion pattern per slide, final state readable without it. The template already implements the research-talk patterns as opt-in `m-` classes (`.m-words`, `.m-circle`, `.m-count`, `.m-grow`, `.m-flow`, `.m-morph`, `.m-dim`, `.m-spot`, `.m-sweep`, `.m-wipe`; see motion.md "템플릿 클래스"): add the class instead of writing new animation CSS.
 
 Put a short **deck spec** above the outline: preset, color tokens (accent and any overrides), fonts,
 slide count, density. Once the user OKs it, copy it into a `<!-- DECK SPEC ... -->` comment at the

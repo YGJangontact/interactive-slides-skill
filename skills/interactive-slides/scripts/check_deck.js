@@ -6,9 +6,10 @@
   const warn = [];
   if (!window.Deck) return { problems: ['window.Deck missing — runtime script not loaded or crashed'], warn };
   await document.fonts.ready;
-  // A hidden/background tab doesn't advance CSS transitions; disable them while measuring.
+  // A hidden/background tab doesn't advance CSS transitions; disable them (and m- entrance animations,
+  // whose start frames move boxes) while measuring, so every slide is measured in its final state.
   const noAnim = document.createElement('style');
-  noAnim.textContent = '*,*::before,*::after{transition:none!important;animation-duration:0s!important}';
+  noAnim.textContent = '*,*::before,*::after{transition:none!important;animation:none!important}';
   document.head.appendChild(noAnim);
   const slides = Deck.slides;
   const ids = new Set();
@@ -114,6 +115,11 @@
         .reduce((a, e) => a + e.textContent.replace(/\s+/g, '').length, 0);
       if (chars > 420) warn.push(`slide ${i + 1} (${s.id}): ${chars} characters of text`);
     }
+    // motion: one m- pattern per slide (references/motion.md); .m-count needs a number in its text
+    const MOTION = { title: '.m-words, .m-rise', section: '.m-circle', numbers: '.m-count, .m-grow', flow: '.m-flow', morph: '.m-morph', steps: '.m-dim', spotlight: '.m-spot', sweep: '.m-sweep', wipe: '.m-wipe' };
+    const used = Object.keys(MOTION).filter(g => s.matches(MOTION[g]) || s.querySelector(MOTION[g]));
+    if (used.length > 1) warn.push(`slide ${i + 1} (${s.id}): ${used.length} motion patterns (${used.join(', ')}); keep one per slide`);
+    s.querySelectorAll('.m-count').forEach(c => { if (!/\d/.test(c.textContent)) problems.push(`slide ${i + 1} (${s.id}): .m-count "${c.textContent.trim().slice(0, 20)}" has no number to count`); });
     const nSteps = s.querySelectorAll('.step').length;
     const demoCount = Deck.demos.filter(d => d.slide === s).length;
     const hasNotes = !!s.querySelector('aside.notes');
