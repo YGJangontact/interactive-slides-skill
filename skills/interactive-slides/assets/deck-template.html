@@ -13,10 +13,14 @@
 -->
 
 <!-- === FONTS — Google Fonts only, so the same file also publishes as a claude.ai artifact.
-     A locally installed Pretendard wins automatically (first in the font stack). === -->
+     A locally installed Pretendard wins automatically (first in the font stack).
+     Line 1: academic / lecture (always). Line 2: only for the style presets — keep the families your
+     deck's presets use and delete the rest (paper: Source Serif 4 + IBM Plex Mono; stage: Inter +
+     IBM Plex Mono; grid: IBM Plex Sans KR + IBM Plex Mono). Hangul comes from the Noto/Plex KR families. === -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Math&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Inter:wght@500;700;800&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 
 <!-- === OPTIONAL: KaTeX (delete this block if the deck has no math).
      Rendered as MathML, so no KaTeX stylesheet/fonts are needed. === -->
@@ -26,28 +30,99 @@
 <style>
 /* ===========================================
    THEME TOKENS — change the look here.
-   Two presets: data-preset="academic" (lab meeting, conference)
-   and data-preset="lecture" (blog lecture, public talk) on <body>.
+   data-preset goes on <body> (whole deck) and may also go on one <section class="slide"> (that slide
+   only; the nearest data-preset wins). Default presets: "academic" (lab meeting, conference),
+   "lecture" (blog lecture, public talk). Style presets: "paper" (editorial-light), "stage"
+   (cinematic-dark), "grid" (swiss-grid) — see references/design.md "Presets".
+   Every preset sets the full token set, so a slide preset never inherits another preset's colours.
+   No gradient text (background-clip: text) in any preset: it prints as a filled box in the PDF.
    =========================================== */
 :root {
   --stage-bg: #101114;
-  --font-body: 'Pretendard Variable', Pretendard, 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-sans: 'Pretendard Variable', Pretendard, 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-body: var(--font-sans);
   --font-display: var(--font-body);
   --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  /* Label stack: Latin mono first, then a Korean sans BEFORE any generic family, so Hangul never falls
+     to a system mono/fallback face (Plex Mono and JetBrains Mono have no Hangul). */
+  --font-label: 'IBM Plex Mono', 'JetBrains Mono', Consolas, 'Pretendard Variable', Pretendard, 'Noto Sans KR', 'Malgun Gothic', monospace;
   --size-h1: 96px; --size-h2: 64px; --size-h3: 40px; --size-body: 34px; --size-small: 26px;
   --pad-y: 104px; --pad-x: 128px; --gap: 40px;
   --radius: 18px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
-body[data-preset="academic"] {
+/* Shared component tokens. Defaults = the academic/lecture look; style presets override some.
+   var() inside a token resolves on the element that carries data-preset, i.e. with that preset's colours. */
+[data-preset] {
+  --slide-bg: var(--bg); --cover-bg: var(--bg-alt); --divider-bg: var(--bg-alt); --band: none; --band-h: 0px;
+  --h-weight: 700;
+  --kicker-font: var(--font-body); --kicker-size: var(--size-small); --kicker-track: .08em; --kicker-track-ko: .08em; --kicker-color: var(--accent); --kicker-rule: 0px; --kicker-rule-gap: 0px;
+  --panel-bg: var(--surface); --panel-border: 1px solid var(--line); --panel-top: 1px solid var(--line); --panel-radius: var(--radius); --panel-x: 1;
+  --kpi-bg: var(--bg-alt); --kpi-top: 0px solid transparent; --kpi-radius: 14px; --kpi-font: var(--font-mono); --kpi-x: 1;
+  --take-bg: color-mix(in srgb, var(--accent) 8%, transparent); --take-ink: var(--text); --take-bar: 8px solid var(--accent); --take-top: 0px solid transparent; --take-radius: 0 12px 12px 0; --take-font: var(--font-body); --take-hl: var(--accent); --take-x: 24px;
+  --hl-mark: color-mix(in srgb, var(--accent) 22%, transparent); --take-mark: var(--hl-mark);
+  --on-accent: var(--bg);
+  --conclusion-bg: var(--bg-alt); --num-ink: var(--accent);
+  --viz-grey: #8a919e; --viz-ok: #1f8a5b; --viz-bad: #c0392b; --viz-dot: #fff;
+}
+[data-preset="academic"] {
   --bg: #f7f6f2; --bg-alt: #ecebe5; --surface: #ffffff; --line: #d9d7cf;
   --text: #1c1d21; --muted: #5d6068; --accent: #1f5fbf; --accent-2: #c8611a;
-  --font-display: 'Noto Serif KR', Georgia, serif;
+  --font-body: var(--font-sans); --font-display: 'Noto Serif KR', Georgia, serif;
+  --size-h1: 96px; --size-h2: 64px; --size-body: 34px; --radius: 18px;
 }
-body[data-preset="lecture"] {
+[data-preset="lecture"] {
   --bg: #15171c; --bg-alt: #1d2027; --surface: #232733; --line: #343a48;
   --text: #f1f0ec; --muted: #a3a8b4; --accent: #ffb547; --accent-2: #5ec8f2;
-  --size-h1: 112px; --size-h2: 72px; --size-body: 36px;
+  --font-body: var(--font-sans); --font-display: var(--font-body);
+  --size-h1: 112px; --size-h2: 72px; --size-body: 36px; --radius: 18px;
+}
+/* paper — editorial-light: warm paper, serif titles, rules instead of boxes, mono labels.
+   Contrast on --bg (WCAG): text 15.6 · muted 5.8 · accent 5.4 · accent-2 6.4 · viz-grey bars 3.3 (graphic). */
+[data-preset="paper"] {
+  --bg: #f5f1e8; --bg-alt: #ece6d8; --surface: #fbf8f1; --line: #d6cdbb;
+  --text: #1b1915; --muted: #645d51; --accent: #b3341d; --accent-2: #2c5a86;
+  --font-body: var(--font-sans); --font-display: 'Source Serif 4', 'Noto Serif KR', Georgia, serif;
+  --size-h1: 112px; --size-h2: 64px; --size-body: 34px; --radius: 8px;
+  --cover-bg: var(--bg);
+  --kicker-font: var(--font-label); --kicker-size: 24px; --kicker-track: .14em; --kicker-track-ko: .02em; --kicker-rule: 48px; --kicker-rule-gap: 16px;
+  --panel-bg: transparent; --panel-border: 0px solid transparent; --panel-top: 3px solid var(--text); --panel-radius: 0px; --panel-x: 0;
+  --kpi-bg: transparent; --kpi-top: 3px solid var(--text); --kpi-radius: 0px; --kpi-font: var(--font-display); --kpi-x: 0;
+  --take-bg: transparent; --take-bar: 0px solid transparent; --take-top: 1.5px solid var(--line); --take-radius: 0px; --take-font: var(--font-display); --take-x: 0px;
+  --viz-grey: #8a8378; --viz-dot: var(--surface);
+}
+/* stage — cinematic-dark: near-black with one static corner glow, heavy sans, dark panels.
+   Contrast on --bg: text 17.1 · muted 8.2 · accent 9.7 · accent-2 10.5 · viz-grey 4.1. */
+[data-preset="stage"] {
+  --bg: #0b0c10; --bg-alt: #11141a; --surface: #14171d; --line: #2a2f39;
+  --text: #f1f0ec; --muted: #a2a8b3; --accent: #8fb8ff; --accent-2: #f2b34a;
+  --font-body: var(--font-sans); --font-display: 'Inter', 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif;
+  --size-h1: 120px; --size-h2: 68px; --size-body: 34px; --radius: 20px;
+  --slide-bg: radial-gradient(1100px 700px at 84% 14%, rgba(110, 150, 255, .14), transparent 70%), var(--bg);
+  --cover-bg: radial-gradient(1100px 700px at 82% 18%, rgba(110, 150, 255, .18), transparent 70%), radial-gradient(900px 600px at 8% 108%, rgba(242, 179, 74, .07), transparent 70%), var(--bg);
+  --divider-bg: var(--cover-bg); --conclusion-bg: var(--cover-bg);
+  --h-weight: 800;
+  --kicker-font: var(--font-label); --kicker-size: 24px; --kicker-track: .14em; --kicker-track-ko: .02em; --kicker-rule: 48px; --kicker-rule-gap: 16px;
+  --panel-radius: 20px;
+  --kpi-bg: transparent; --kpi-top: 1px solid var(--line); --kpi-radius: 0px; --kpi-font: var(--font-display); --kpi-x: 0;
+  --take-bg: rgba(143, 184, 255, .08);
+  --viz-grey: #6b7385; --viz-ok: #5cc98f; --viz-bad: #ff7a6b; --viz-dot: var(--surface);
+}
+/* grid — swiss-grid: white, one red, black rules, no radius/shadow, top band.
+   Contrast on --bg: text 18.9 · muted 7.3 · accent 4.9 · accent-2 5.3 · viz-grey 3.4. Red = emphasis only:
+   don't also use it for "bad" in this preset (--viz-bad is black). */
+[data-preset="grid"] {
+  --bg: #ffffff; --bg-alt: #f6f6f6; --surface: #ffffff; --line: #c8c8c8;
+  --text: #111111; --muted: #565656; --accent: #e2001a; --accent-2: #6b6b6b;
+  --font-body: 'IBM Plex Sans KR', var(--font-sans); --font-display: 'IBM Plex Sans KR', 'Inter', 'Noto Sans KR', sans-serif;
+  --size-h1: 120px; --size-h2: 60px; --size-body: 34px;
+  --radius: 0px; --cover-bg: var(--bg); --band: inset 0 16px 0 var(--text); --band-h: 16px;
+  --kicker-font: var(--font-label); --kicker-size: 24px; --kicker-track: .1em; --kicker-track-ko: .02em;
+  --panel-bg: transparent; --panel-border: 0px solid transparent; --panel-top: 3px solid var(--text); --panel-radius: 0px; --panel-x: 0;
+  --kpi-bg: transparent; --kpi-top: 3px solid var(--text); --kpi-radius: 0px; --kpi-font: var(--font-display); --kpi-x: 0;
+  --take-bg: var(--text); --take-ink: var(--bg); --take-bar: 0px solid transparent; --take-radius: 0px; --take-hl: var(--bg); --take-mark: var(--accent); --take-x: 28px;
+  --viz-grey: #8c8c8c; --viz-ok: #111111; --viz-bad: #111111; --viz-dot: #fff;
+  --num-ink: var(--text);
 }
 
 /* ===========================================
@@ -61,7 +136,8 @@ body { font-family: var(--font-body); color: var(--text); -webkit-font-smoothing
 .slide {
   position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden;
   visibility: hidden; opacity: 0; pointer-events: none;
-  background: var(--bg);
+  background: var(--slide-bg); box-shadow: var(--band);
+  color: var(--text); font-family: var(--font-body); /* per-slide presets: own text colour and font, not body's */
   padding: var(--pad-y) var(--pad-x);
   display: flex; flex-direction: column; gap: var(--gap);
   font-size: var(--size-body); line-height: 1.5;
@@ -81,11 +157,13 @@ body { font-family: var(--font-body); color: var(--text); -webkit-font-smoothing
    SLIDE COMPONENTS
    =========================================== */
 h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; word-break: keep-all; }
-h1 { font-size: var(--size-h1); }
-h2 { font-size: var(--size-h2); }
+h1 { font-size: var(--size-h1); font-weight: var(--h-weight); }
+h2 { font-size: var(--size-h2); font-weight: var(--h-weight); }
 h3 { font-size: var(--size-h3); }
 p, li { word-break: keep-all; }
-.kicker { font-size: var(--size-small); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.kicker { font-family: var(--kicker-font); font-size: var(--kicker-size); font-weight: 600; letter-spacing: var(--kicker-track); text-transform: uppercase; color: var(--kicker-color); }
+.kicker::before { content: ''; display: inline-block; vertical-align: .3em; width: var(--kicker-rule); height: 3px; margin-right: var(--kicker-rule-gap); background: currentColor; }
+.kicker .ko { font-family: var(--font-body); letter-spacing: var(--kicker-track-ko); } /* Hangul runs, wrapped by the LABELS script */
 .lead { font-size: 44px; line-height: 1.4; color: var(--muted); max-width: 1400px; }
 .muted { color: var(--muted); }
 .small { font-size: var(--size-small); }
@@ -98,8 +176,13 @@ ul.points li::before { content: ''; position: absolute; left: 0; top: .62em; wid
 .cols > *, .vrow > *, .kpis > * { min-width: 0; } /* 1fr never shrinks below its content otherwise: a wide formula pushes the column off the slide */
 .cols.c3 { grid-template-columns: repeat(3, 1fr); }
 .cols.wide-left { grid-template-columns: 3fr 2fr; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 40px; display: flex; flex-direction: column; gap: 16px; }
+.card { background: var(--panel-bg); border: var(--panel-border); border-top: var(--panel-top); border-radius: var(--panel-radius); padding: 40px calc(40px * var(--panel-x)); display: flex; flex-direction: column; gap: 16px; }
 .big-number { font-family: var(--font-display); font-size: 160px; font-weight: 700; line-height: 1; color: var(--accent); }
+/* Numbered columns: <div class="cols c3 numbered"> puts 01, 02, ... on top of each child, so a column reads
+   number -> title -> text (no number parked at the bottom). Size: --num-size on the .cols. Box = digit height. */
+.cols.numbered { counter-reset: num; }
+.cols.numbered > * { counter-increment: num; }
+.cols.numbered > *::before { content: counter(num, decimal-leading-zero); display: block; flex: none; margin-bottom: 12px; font: var(--h-weight) var(--num-size, 240px)/1 var(--font-display); text-box: trim-both cap alphabetic; letter-spacing: -0.04em; color: var(--num-ink); font-variant-numeric: tabular-nums lining-nums; }
 .spacer { flex: 1; }
 .slide-footer { position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 44px; display: flex; justify-content: space-between; font-size: 22px; color: var(--muted); }
 pre.code { font-family: var(--font-mono); font-size: 26px; line-height: 1.55; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 32px 36px; overflow: hidden; white-space: pre; }
@@ -107,11 +190,37 @@ figure { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 figure img { object-fit: contain; border-radius: 12px; }
 figcaption { font-size: var(--size-small); color: var(--muted); }
 
-/* Cover and statement slides */
-.slide.cover { justify-content: center; background: var(--bg-alt); }
+/* Cover, section divider, conclusion
+   .divider          neutral section break: big number (data-num) + section title + one "next question" line
+   .conclusion       the takeaway, one sentence (2-3 per deck at most): neutral --conclusion-bg, a thick accent
+                     rule above it, the key word in <span class="accent">
+   .conclusion.solid opt-in full-bleed accent background (closing line of a lecture or keynote)
+   .statement        old name, kept so existing decks render the same (full accent background, no rule) */
+.slide.cover { justify-content: center; background: var(--cover-bg); }
 .slide.cover h1 { max-width: 1500px; }
-.slide.statement { justify-content: center; align-items: flex-start; background: var(--accent); color: var(--bg); }
-.slide.statement h2 { font-size: 88px; max-width: 1500px; }
+.slide.divider { justify-content: center; background: var(--divider-bg); gap: 28px; }
+.slide.divider[data-num]::before { content: attr(data-num); display: block; font: var(--h-weight) 240px/1 var(--font-display); text-box: trim-both cap alphabetic; letter-spacing: -0.04em; color: var(--accent); font-variant-numeric: tabular-nums lining-nums; } /* box = digit height (text-box; older browsers: a 1em box). No overflow:hidden: Korean fonts sit the baseline low and lose the digits' bottom */
+.slide.divider h2 { font-size: 88px; max-width: 1500px; }
+.slide.divider .lead { color: var(--muted); }
+.slide.statement, .slide.conclusion { justify-content: center; align-items: flex-start; background: var(--conclusion-bg); color: var(--text); }
+.slide.statement h2, .slide.conclusion h2 { font-size: 88px; max-width: 1500px; }
+.slide.conclusion::before { content: ''; flex: none; width: 200px; height: 14px; background: var(--accent); } /* the accent rule */
+.slide.statement, .slide.conclusion.solid { background: var(--accent); color: var(--on-accent); }
+.slide.statement .kicker, .slide.conclusion.solid .kicker { color: var(--on-accent); }
+.slide.conclusion.solid::before { background: var(--on-accent); }
+.slide.statement .accent, .slide.conclusion.solid .accent { color: inherit; text-decoration: underline .08em; text-underline-offset: .16em; }
+
+/* Section progress strip (opt-in: <body data-progress="sections">). The SECTIONS script puts one
+   .sec-strip inside every slide from data-section values, so it is part of the slide and prints in the
+   PDF. Absolute: it sits in the top padding (about 26-66 px) and never moves the content. Not drawn on
+   .cover / .conclusion / .statement or on a slide with data-progress="off". */
+.sec-strip { position: absolute; left: var(--pad-x); right: var(--pad-x); top: calc(var(--band-h) + 26px); display: flex; align-items: center; gap: 44px; padding-bottom: 10px; border-bottom: 1.5px solid var(--line); font: 500 22px/1.2 var(--font-body); color: var(--muted); white-space: nowrap; pointer-events: none; z-index: 2; }
+.sec-strip .sec { display: flex; align-items: center; gap: 12px; }
+.sec-strip .sec.on { color: var(--text); font-weight: 700; }
+.sec-strip .dots { display: flex; gap: 6px; }
+.sec-strip i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid currentColor; }
+.sec-strip .sec:not(.on) i { border-color: var(--line); }
+.sec-strip i.on { background: var(--accent); border-color: var(--accent); }
 
 /* Demo panels: a stage (canvas/svg) plus a controls column. */
 .demo { display: grid; grid-template-columns: 1fr 460px; gap: 40px; flex: 1; min-height: 0; }
@@ -134,20 +243,68 @@ figcaption { font-size: var(--size-small); color: var(--muted); }
    =========================================== */
 figure.viz { margin: 0; width: 100%; } figure.viz svg { display: block; overflow: visible; }
 .vrow { display: grid; gap: 28px; align-items: stretch; flex: 1; min-height: 0; }
-.vcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px 28px; display: flex; flex-direction: column; gap: 10px; }
+.vcard { background: var(--panel-bg); border: var(--panel-border); border-top: var(--panel-top); border-radius: var(--panel-radius); padding: 24px calc(28px * var(--panel-x)); display: flex; flex-direction: column; gap: 10px; }
 .vcard > h3 { font-size: 30px; margin: 0; } .vcard > .cap { font-size: 22px; color: var(--muted); margin: 0; }
 .kpis { display: grid; gap: 14px; }
-.kpi { background: var(--bg-alt); border-radius: 14px; padding: 14px 22px; display: flex; flex-direction: column; justify-content: center; }
-.kpi b { font-family: var(--font-mono); font-size: 54px; line-height: 1.1; color: var(--accent); font-weight: 700; }
+.kpi { background: var(--kpi-bg); border-top: var(--kpi-top); border-radius: var(--kpi-radius); padding: 14px calc(22px * var(--kpi-x)); display: flex; flex-direction: column; justify-content: center; }
+.kpi b { font-family: var(--kpi-font); font-size: 54px; line-height: 1.1; color: var(--accent); font-weight: 700; }
 .kpi b.o { color: var(--accent-2); } .kpi b.g { color: var(--muted); }
 .kpi span { font-size: 23px; color: var(--muted); }
-.take { font-size: 30px; line-height: 1.45; font-weight: 600; background: color-mix(in srgb, var(--accent) 8%, transparent); border-left: 8px solid var(--accent); border-radius: 0 12px 12px 0; padding: 14px 24px; }
-.take b, .take .hl { color: var(--accent); }
-.hl { background: linear-gradient(transparent 58%, color-mix(in srgb, var(--accent) 22%, transparent) 58%); font-weight: 700; }
+.take { font-family: var(--take-font); font-size: 30px; line-height: 1.45; font-weight: 600; color: var(--take-ink); background: var(--take-bg); border-left: var(--take-bar); border-top: var(--take-top); border-radius: var(--take-radius); padding: 14px var(--take-x); }
+.take b, .take .hl { color: var(--take-hl); }
+.hl { background: linear-gradient(transparent 58%, var(--hl-mark) 58%); font-weight: 700; }
+.take .hl { background-image: linear-gradient(transparent 58%, var(--take-mark) 58%); }
 .hl2 { background: linear-gradient(transparent 58%, color-mix(in srgb, var(--accent-2) 25%, transparent) 58%); font-weight: 700; }
 .vstrip { display: grid; gap: 8px 28px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 22px; }
 .vstrip > .lab { font-size: 24px; font-weight: 700; line-height: 1.3; } .vstrip > .lab small { display: block; font-size: 22px; color: var(--muted); font-weight: 500; }
 .vstrip .kpi { padding: 8px 16px; } .vstrip .kpi b { font-size: 38px; } .vstrip .kpi span { font-size: 22px; line-height: 1.3; }
+
+/* ===========================================
+   MOTION — opt-in m- classes (references/motion.md "템플릿 클래스"). At most one pattern per slide.
+   Final state is the default: print/PDF, reduced motion, no JS and presenter previews all show it.
+   Animations run only on screen under html.motion (set by the runtime when Deck.reducedMotion is false)
+   and replay each time a slide becomes active. Keyframes define only the start; fill "backwards".
+   T1 .m-words title + .m-rise subtitle · S1 .slide.m-circle · D1 .m-count · D2 figure.viz.m-grow
+   F1 svg.m-flow (.edges / .nodes children with --i, .back last) · F2 .m-morph [data-from]
+   R1 .m-dim (shown steps dim) · E1 figure.viz.m-spot (fade rows) · E2 .m-sweep · E3 .m-wipe (--at)
+   =========================================== */
+.m-count { font-variant-numeric: tabular-nums; }
+.m-words .w { display: inline-block; }
+.m-sweep { background-repeat: no-repeat; background-size: 100% 100%; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.m-sweep:not(.hl):not(.hl2) { background-image: linear-gradient(transparent 58%, color-mix(in srgb, var(--accent) 22%, transparent) 58%); font-weight: 700; }
+.slide.statement .m-sweep:not(.hl):not(.hl2), .slide.conclusion.solid .m-sweep:not(.hl):not(.hl2) { background-image: linear-gradient(transparent 60%, color-mix(in srgb, var(--bg) 35%, transparent) 60%); }
+.m-wipe { --at: 50%; position: relative; display: grid; min-height: 0; }
+.m-wipe > * { grid-area: 1 / 1; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.m-wipe > :last-child { clip-path: inset(0 0 0 var(--at)); }
+.m-wipe::after { content: ''; position: absolute; top: 0; bottom: 0; left: var(--at); width: 4px; margin-left: -2px; background: var(--accent); }
+@media screen { .m-dim .step.shown:has(~ .step.shown) { opacity: .45; } } /* information, not motion: kept under reduced motion */
+
+@keyframes m-rise { from { opacity: 0; transform: translateY(.45em); } }
+@keyframes m-fade { from { opacity: 0; } }
+@keyframes m-circle { from { clip-path: circle(0% at 8% 92%); } to { clip-path: circle(150% at 8% 92%); } }
+@keyframes m-grow-x { from { transform: scaleX(0); } }
+@keyframes m-grow-y { from { transform: scaleY(0); } }
+@keyframes m-draw { from { stroke-dashoffset: 1; } }
+@keyframes m-pop { from { opacity: 0; transform: scale(.88); } }
+@keyframes m-undim { from { opacity: 1; } }
+@keyframes m-sweep { from { background-size: 0% 100%; } }
+@keyframes m-wipe { from { clip-path: inset(0 0 0 100%); } }
+@keyframes m-wipe-line { from { left: 100%; } }
+@media screen {
+  html.motion .slide.active .m-words .w { animation: m-rise .7s var(--ease) calc(var(--i, 0) * 90ms + 150ms) backwards; }
+  html.motion .slide.active .m-rise { animation: m-rise .7s var(--ease) var(--d, .9s) backwards; }
+  html.motion .slide.active.m-circle { animation: m-circle .9s cubic-bezier(.65, 0, .35, 1) backwards; }
+  html.motion .slide.active figure.viz.m-grow .bar { transform-box: fill-box; transform-origin: left center; animation: m-grow-x .8s var(--ease) calc(var(--i, 0) * 110ms + 200ms) backwards; }
+  html.motion .slide.active figure.viz.m-grow[data-kind="groups"] .bar { transform-origin: center bottom; animation-name: m-grow-y; }
+  html.motion .slide.active figure.viz.m-grow .val { animation: m-fade .4s ease calc(var(--i, 0) * 110ms + 700ms) backwards; }
+  html.motion .slide.active .m-flow .edges > * { stroke-dasharray: 1; animation: m-draw .45s ease-out calc(var(--i, 0) * var(--m-step, 420ms) + 260ms) backwards; }
+  html.motion .slide.active .m-flow .nodes > * { transform-box: fill-box; transform-origin: center; animation: m-pop .5s var(--ease) calc(var(--i, 0) * var(--m-step, 420ms)) backwards; }
+  html.motion .slide.active .m-flow .back { animation-duration: .8s; animation-delay: var(--m-back, 2.4s); }
+  html.motion .slide.active figure.viz.m-spot .bar.fade { animation: m-undim .6s ease 1.1s backwards; }
+  html.motion .slide.active .m-sweep { animation: m-sweep .9s var(--ease) .5s backwards; }
+  html.motion .slide.active .m-wipe > :last-child { animation: m-wipe 1s var(--ease) .3s backwards; }
+  html.motion .slide.active .m-wipe::after { animation: m-wipe-line 1s var(--ease) .3s backwards; }
+}
 
 /* ===========================================
    DECK CHROME (outside the stage; hidden in print and embeds)
@@ -178,9 +335,12 @@ body.presenter .deck-viewport, body.presenter .deck-progress, body.presenter .de
   .step { opacity: 1 !important; transform: none !important; }
   .deck-progress, .deck-counter, .deck-jump, .deck-black, .presenter-ui { display: none !important; }
 }
+/* Reduced motion: OS setting, unless ?motion forces motion on (rehearsal on a PC with animations off);
+   ?reduced forces the reduced path for testing. Final states must read without any animation. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  html:not(.force-motion) *, html:not(.force-motion) *::before, html:not(.force-motion) *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+html.force-reduce *, html.force-reduce *::before, html.force-reduce *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 </style>
 </head>
 <body data-preset="academic">
@@ -190,20 +350,22 @@ body.presenter .deck-viewport, body.presenter .deck-progress, body.presenter .de
 
 <section class="slide cover" id="cover">
   <p class="kicker">Lab Meeting · 2026.10</p>
-  <h1>슬라이드 제목을 여기에</h1>
-  <p class="lead">한 줄 부제 — 이 발표에서 무엇을 얻어 가는지</p>
-  <aside class="notes">발표자 노트: 인사와 발표 목적.</aside>
+  <h1 class="m-words">슬라이드 제목을 여기에</h1>
+  <p class="lead m-rise">한 줄 부제 — 이 발표에서 무엇을 얻어 가는지</p>
+  <aside class="notes">발표자 노트: 인사와 발표 목적.
+(모션 예시 T1: .m-words 제목 단어 등장 + .m-rise 부제. 클래스를 지우면 정지 제목.)</aside>
 </section>
 
 <section class="slide" id="outline">
   <p class="kicker">Overview</p>
   <h2>오늘 다룰 세 가지</h2>
-  <ul class="points">
-    <li class="step">문제 정의 — 왜 이게 어려운가</li>
-    <li class="step">핵심 아이디어 — 수식 \( y = A\sin(2\pi f t) \) 하나로 설명</li>
-    <li class="step">직접 만져 보는 데모</li>
-  </ul>
-  <aside class="notes">→ 키를 누를 때마다 한 줄씩 나타남.</aside>
+  <div class="cols c3 numbered m-dim">
+    <div class="card step"><h3>문제 정의</h3><p>왜 이게 어려운가 — 기존 방법이 놓치는 것</p><p class="small muted">[__]분</p></div>
+    <div class="card step"><h3>핵심 아이디어</h3><p>식 \( y = A\sin(2\pi f t) \) 하나로 전체를 설명</p><p class="small muted">[__]분</p></div>
+    <div class="card step"><h3>데모</h3><p>주파수와 진폭을 직접 바꿔 보는 데모</p><p class="small muted">[__]분</p></div>
+  </div>
+  <p class="take">끝나면 <span class="hl">한 가지</span>를 가져간다 — 그 한 문장을 여기에.</p>
+  <aside class="notes">번호 열(.cols.numbered): 번호 → 제목 → 한 줄 순서. → 키를 누를 때마다 한 열씩 나타나고 앞 열은 흐려짐(R1 .m-dim, 화면 전용).</aside>
 </section>
 
 <section class="slide" id="result">
@@ -212,7 +374,7 @@ body.presenter .deck-viewport, body.presenter .deck-progress, body.presenter .de
   <div class="vrow" style="grid-template-columns: 1.55fr 1fr">
     <div class="vcard">
       <h3>정답률 · 예시 숫자 [__]</h3>
-      <figure class="viz" data-kind="hbars" data-h="380" data-src="[원 결과 파일 · 표/절]"><script type="application/json">
+      <figure class="viz m-grow" data-kind="hbars" data-h="380" data-src="[원 결과 파일 · 표/절]"><script type="application/json">
         {"lw":300,"max":60,"ticks":[0,20,40,60],"rows":[
           {"l":"기준 모델","v":40.0,"c":"g"},
           {"l":"비교 모델","v":41.0,"c":"b"},
@@ -221,12 +383,13 @@ body.presenter .deck-viewport, body.presenter .deck-progress, body.presenter .de
       <p class="cap">출처와 조건은 캡션이나 노트에</p>
     </div>
     <div class="kpis">
-      <div class="kpi"><b>+0.60</b><span>핵심 수치 [구간]</span></div>
+      <div class="kpi"><b class="m-count">+0.60</b><span>핵심 수치 [구간]</span></div>
       <div class="kpi"><b>15 / 16</b><span>보조 수치</span></div>
     </div>
   </div>
   <p class="take">이 슬라이드가 말하는 한 가지를 <span class="hl">여기만</span> 강조한다.</p>
-  <aside class="notes">세부 표·식·출처는 노트로. 숫자는 원 파일에서 옮기고 파일 이름을 적는다.</aside>
+  <aside class="notes">세부 표·식·출처는 노트로. 숫자는 원 파일에서 옮기고 파일 이름을 적는다.
+(모션 예시 D2 .m-grow 막대 성장 + D1 .m-count 카운트업. 마크업의 값이 최종값이다.)</aside>
 </section>
 
 <section class="slide" id="demo-wave">
@@ -246,8 +409,10 @@ body.presenter .deck-viewport, body.presenter .deck-progress, body.presenter .de
   <aside class="notes">슬라이더를 움직여 보여 주고, Esc 후 → 로 다음 슬라이드.</aside>
 </section>
 
-<section class="slide statement" id="takeaway">
-  <h2>핵심 메시지 한 문장.</h2>
+<section class="slide conclusion" id="takeaway">
+  <p class="kicker">Takeaway</p>
+  <h2>핵심 메시지 한 문장, <span class="accent">핵심 단어</span> 하나만 강조.</h2>
+  <aside class="notes">결론 장(.conclusion): 중립 바탕 + 굵은 강조색 선. 강조색 전면 바탕이 필요하면 .conclusion.solid.</aside>
 </section>
 
 <!-- ================= SLIDES END ================= -->
@@ -265,8 +430,14 @@ body.presenter .deck-viewport, body.presenter .deck-progress, body.presenter .de
    Don't write a closing script tag inside this comment or the JSON: it ends the script element.
    =========================================== */
 window.addEventListener('DOMContentLoaded', () => {
-  const NS = 'http://www.w3.org/2000/svg', css = getComputedStyle(document.body), tok = n => css.getPropertyValue(n).trim();
-  const C = { a: tok('--accent'), b: tok('--accent-2'), g: '#8a919e', ok: '#1f8a5b', bad: '#c0392b', mute: '#c9ccd3', ink: tok('--text'), sub: tok('--muted'), line: tok('--line') };
+  const NS = 'http://www.w3.org/2000/svg';
+  // Colours come from the chart's own figure, not <body>, so a slide with its own data-preset gets its
+  // own palette. C is re-read for every figure in the loop at the bottom.
+  let C = {};
+  const palette = fig => {
+    const css = getComputedStyle(fig), tok = (n, d) => css.getPropertyValue(n).trim() || d;
+    return { a: tok('--accent'), b: tok('--accent-2'), g: tok('--viz-grey', '#8a919e'), ok: tok('--viz-ok', '#1f8a5b'), bad: tok('--viz-bad', '#c0392b'), mute: '#c9ccd3', ink: tok('--text'), sub: tok('--muted'), line: tok('--line'), dot: tok('--viz-dot', '#fff') };
+  };
   const col = c => C[c] || c || C.g;
   const el = (t, a, p) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); p && p.appendChild(e); return e; };
   const tx = (p, x, y, s, a = {}) => { const t = el('text', Object.assign({ x, y, 'font-size': 24, fill: C.sub, 'font-family': 'inherit' }, a), p); t.textContent = s; return t; };
@@ -282,9 +453,9 @@ window.addEventListener('DOMContentLoaded', () => {
     rows.forEach((r, i) => {
       const yc = top + rh * (i + .5);
       tx(svg, x0 - 16, yc + 9, r.l, { 'text-anchor': 'end', fill: C.ink, 'font-size': r.b ? 27 : 25, 'font-weight': r.b ? 700 : 500 });
-      el('rect', { x: x0, y: yc - bh / 2, width: Math.max(X(r.v) - x0, 3), height: bh, rx: 8, fill: col(r.c), opacity: r.fade ? .4 : 1 }, svg);
+      el('rect', { x: x0, y: yc - bh / 2, width: Math.max(X(r.v) - x0, 3), height: bh, rx: 8, fill: col(r.c), opacity: r.fade ? .4 : 1, class: r.fade ? 'bar fade' : 'bar', style: `--i:${i}` }, svg);
       if (r.lo != null) el('line', { x1: X(r.lo), x2: X(r.hi), y1: yc, y2: yc, stroke: C.ink, 'stroke-width': 3 }, svg);
-      tx(svg, X(Math.max(r.v, r.hi ?? 0)) + 12, yc + 9, r.t ?? `${fmt(r.v, d)}${d.unit ?? '%'}`, Object.assign({ fill: r.b ? col(r.c) : C.ink, 'font-size': r.b ? 30 : 26, 'font-weight': 700 }, mono));
+      tx(svg, X(Math.max(r.v, r.hi ?? 0)) + 12, yc + 9, r.t ?? `${fmt(r.v, d)}${d.unit ?? '%'}`, Object.assign({ fill: r.b ? col(r.c) : C.ink, 'font-size': r.b ? 30 : 26, 'font-weight': 700, class: 'val', style: `--i:${i}` }, mono));
     });
     if (d.ref != null) { el('line', { x1: X(d.ref), x2: X(d.ref), y1: top, y2: H - bot, stroke: C.ink, 'stroke-dasharray': '8 6', 'stroke-width': 2.5 }, svg); if (d.refl) tx(svg, X(d.ref) + 8, top + 22, d.refl, { fill: C.ink, 'font-size': 22 }); }
   }
@@ -299,7 +470,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (d.xl) tx(svg, (L + R) / 2, H - 6, d.xl, { 'text-anchor': 'middle', fill: C.ink, 'font-size': 23 });
     (d.series || []).forEach(s => {
       el('polyline', { points: s.pts.map(([x, y]) => `${X(x)},${Y(y)}`).join(' '), fill: 'none', stroke: col(s.c), 'stroke-width': s.w || 6, 'stroke-dasharray': s.dash || '', 'stroke-linejoin': 'round' }, svg);
-      if (!s.nodots) s.pts.forEach(([x, y]) => { el('circle', { cx: X(x), cy: Y(y), r: 9, fill: '#fff', stroke: col(s.c), 'stroke-width': 4.5 }, svg); if (s.vals) tx(svg, X(x), Y(y) + (s.below ? 40 : -20), fmt(y, d), Object.assign({ 'text-anchor': 'middle', fill: col(s.c), 'font-size': 25, 'font-weight': 700 }, mono)); });
+      if (!s.nodots) s.pts.forEach(([x, y]) => { el('circle', { cx: X(x), cy: Y(y), r: 9, fill: C.dot, stroke: col(s.c), 'stroke-width': 4.5 }, svg); if (s.vals) tx(svg, X(x), Y(y) + (s.below ? 40 : -20), fmt(y, d), Object.assign({ 'text-anchor': 'middle', fill: col(s.c), 'font-size': 25, 'font-weight': 700 }, mono)); });
       if (s.l) { const [x, y] = s.pts[s.pts.length - 1], right = (s.lx || 0) > 0; tx(svg, X(x) + (right ? 18 : (s.lx || 0)), Y(y) + (s.ly ?? -26), s.l, { 'text-anchor': right ? 'start' : 'end', fill: col(s.c), 'font-weight': 700, 'font-size': 25 }); }
     });
     (d.notes || []).forEach(n => tx(svg, X(n.x), Y(n.y), n.s, { 'text-anchor': n.a || 'middle', fill: col(n.c), 'font-size': n.fs || 24, 'font-weight': 700 }));
@@ -309,10 +480,11 @@ window.addEventListener('DOMContentLoaded', () => {
   function groups(svg, d, W, H) {
     const [L, R, T, B] = [70, W - 10, 40, H - (d.legend ? 96 : 56)], max = d.max || 100;
     const Y = v => B - (B - T) * v / max, gw = (R - L) / d.groups.length;
+    let i = 0; // bar index across groups: --i drives the m-grow stagger
     (d.yt || [0, max / 2, max]).forEach(v => { el('line', { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: C.line, 'stroke-width': 2 }, svg); tx(svg, L - 10, Y(v) + 8, `${v}${d.unit ?? '%'}`, { 'text-anchor': 'end', 'font-size': 22 }); });
     d.groups.forEach((g, gi) => {
       const n = g.bars.length, bw = Math.min((gw - 40) / n, d.bw || 90), x0 = L + gi * gw + (gw - bw * n - 8 * (n - 1)) / 2;
-      g.bars.forEach((b, k) => { const x = x0 + k * (bw + 8); el('rect', { x, y: Y(b.v), width: bw, height: B - Y(b.v), rx: 8, fill: col(b.c) }, svg); tx(svg, x + bw / 2, Y(b.v) - 10, b.t ?? fmt(b.v, d), Object.assign({ 'text-anchor': 'middle', fill: C.ink, 'font-size': 25, 'font-weight': 700 }, mono)); });
+      g.bars.forEach((b, k) => { const x = x0 + k * (bw + 8), st = `--i:${i++}`; el('rect', { x, y: Y(b.v), width: bw, height: B - Y(b.v), rx: 8, fill: col(b.c), opacity: b.fade ? .4 : 1, class: b.fade ? 'bar fade' : 'bar', style: st }, svg); tx(svg, x + bw / 2, Y(b.v) - 10, b.t ?? fmt(b.v, d), Object.assign({ 'text-anchor': 'middle', fill: C.ink, 'font-size': 25, 'font-weight': 700, class: 'val', style: st }, mono)); });
       tx(svg, L + gi * gw + gw / 2, B + 36, g.l, { 'text-anchor': 'middle', fill: C.ink, 'font-size': 25, 'font-weight': g.b ? 700 : 500 });
     });
     if (d.legend) { let x = L; d.legend.forEach(([s, c]) => { el('rect', { x, y: H - 34, width: 26, height: 26, rx: 5, fill: col(c) }, svg); const t = tx(svg, x + 36, H - 13, s, { fill: C.ink, 'font-size': 24 }); x += 36 + t.getComputedTextLength() + 36; }); }
@@ -337,11 +509,120 @@ window.addEventListener('DOMContentLoaded', () => {
   const K = { hbars, lines, groups, forest };
   document.querySelectorAll('figure.viz').forEach(fig => {
     try {
+      C = palette(fig);
       const d = JSON.parse(fig.querySelector('script').textContent);
       const W = Math.round(fig.offsetWidth) || +fig.dataset.w || 800, H = +fig.dataset.h || 360; // hidden slides keep layout (visibility), so offsetWidth works
       const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': fig.dataset.label || '' }, fig);
       K[fig.dataset.kind](svg, d, W, H);
     } catch (e) { fig.setAttribute('data-demo-error', 'viz: ' + e.message); (window.Deck?.errors || []).push('viz: ' + e.message); }
+  });
+});
+</script>
+
+<script>
+/* ===========================================
+   SECTIONS + LABELS — content helpers (leave as is).
+   LABELS   Hangul runs inside .kicker are wrapped in span.ko, so a mono / uppercase / tracked label
+            style applies to the Latin part only; Korean keeps the body font and near-normal tracking.
+   SECTIONS With <body data-progress="sections">, every slide gets a .sec-strip (section names, one dot
+            per slide, this slide's section and dot highlighted). Put data-section="방법" on the FIRST
+            slide of each section; following slides inherit it until the next data-section. Slides
+            before the first data-section, .cover, .conclusion/.statement and data-progress="off" get none.
+   =========================================== */
+window.addEventListener('DOMContentLoaded', () => {
+  const KO = '[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]';
+  const run = new RegExp(`(${KO}+(?:[\\s·,]+${KO}+)*)`), any = new RegExp(KO);
+  document.querySelectorAll('.kicker').forEach(k => {
+    const w = document.createTreeWalker(k, NodeFilter.SHOW_TEXT), nodes = [];
+    for (let n; (n = w.nextNode());) if (any.test(n.nodeValue) && !n.parentElement.closest('.ko')) nodes.push(n);
+    nodes.forEach(n => {
+      const f = document.createDocumentFragment();
+      n.nodeValue.split(run).forEach((part, i) => {
+        if (!part) return;
+        if (i % 2) { const sp = document.createElement('span'); sp.className = 'ko'; sp.textContent = part; f.append(sp); } else f.append(part);
+      });
+      n.replaceWith(f);
+    });
+  });
+
+  if (document.body.dataset.progress !== 'sections') return;
+  const slides = [...document.querySelectorAll('#deckStage > .slide')];
+  let last = null;
+  const secOf = slides.map(s => (last = s.dataset.section || last));
+  const names = [...new Set(secOf.filter(Boolean))];
+  slides.forEach((s, i) => {
+    if (!secOf[i] || s.matches('.cover, .conclusion, .statement, [data-progress="off"]')) return;
+    const nav = document.createElement('div');
+    nav.className = 'sec-strip'; nav.setAttribute('aria-hidden', 'true');
+    names.forEach(name => {
+      const sec = document.createElement('span'), dots = document.createElement('span');
+      sec.className = 'sec' + (name === secOf[i] ? ' on' : '');
+      dots.className = 'dots';
+      slides.forEach((t, j) => { if (secOf[j] === name) { const d = document.createElement('i'); if (j === i) d.className = 'on'; dots.append(d); } });
+      sec.append(name, dots);
+      nav.append(sec);
+    });
+    s.prepend(nav);
+  });
+});
+</script>
+
+<script>
+/* ===========================================
+   MOTION — the JS half of the opt-in m- classes (CSS: MOTION block in the style sheet). Leave as is.
+   Does nothing without html.motion, so the markup's own text and attributes are the final state.
+   .m-words  splits a heading into word spans (words, not letters: keeps Korean keep-all wrapping)
+   .m-count  counts the first number in its text up from 0 on each slide entry (sign, decimals, commas kept)
+   .m-morph  children with data-from="x:80 y:230 width:240" move from those values to their own attributes
+   .m-flow   gives .edges paths pathLength=1 so the draw animation fits any path
+   =========================================== */
+window.addEventListener('DOMContentLoaded', () => {
+  const on = () => document.documentElement.classList.contains('motion');
+  document.querySelectorAll('.m-flow .edges path:not([pathLength])').forEach(p => p.setAttribute('pathLength', 1));
+  if (on()) document.querySelectorAll('.m-words').forEach(h => {
+    let i = 0;
+    [...h.childNodes].forEach(n => {
+      if (n.nodeType === 1 && n.tagName !== 'BR') { n.classList.add('w'); n.style.setProperty('--i', i++); return; }
+      if (n.nodeType !== 3) return;
+      const f = document.createDocumentFragment();
+      n.nodeValue.split(/(\s+)/).forEach(w => {
+        if (!w) return;
+        if (/^\s+$/.test(w)) return f.append(w);
+        const s = document.createElement('span'); s.className = 'w'; s.style.setProperty('--i', i++); s.textContent = w; f.append(s);
+      });
+      n.replaceWith(f);
+    });
+  });
+  const outCubic = t => 1 - Math.pow(1 - t, 3), inOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  Deck.slides.forEach(slide => {
+    const counts = [...slide.querySelectorAll('.m-count')].map(el => {
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for (let n; (n = w.nextNode());) {
+        const m = n.nodeValue.match(/\d[\d,]*(\.\d+)?/);
+        if (m) return { n, text: n.nodeValue, at: m.index, len: m[0].length, v: +m[0].replace(/,/g, ''), dec: m[1] ? m[1].length - 1 : 0, comma: m[0].includes(',') };
+      }
+    }).filter(Boolean);
+    const morphs = [...slide.querySelectorAll('.m-morph [data-from]')].map(el => {
+      const from = {}, to = {}, raw = {};
+      el.dataset.from.trim().split(/[\s;]+/).forEach(p => { const [k, v] = p.split(':'); raw[k] = el.getAttribute(k); from[k] = parseFloat(v); to[k] = parseFloat(raw[k]); });
+      return { el, from, to, raw };
+    });
+    if (!counts.length && !morphs.length) return;
+    const num = (c, v) => c.comma ? v.toLocaleString('en-US', { minimumFractionDigits: c.dec, maximumFractionDigits: c.dec }) : v.toFixed(c.dec);
+    const paint = t => {
+      const a = outCubic(Math.min(1, t / 1.1)), b = inOut(Math.max(0, Math.min(1, (t - .6) / 1.2))); // count 1.1 s; morph holds .6 s, moves 1.2 s
+      counts.forEach(c => { c.n.nodeValue = c.text.slice(0, c.at) + num(c, c.v * a) + c.text.slice(c.at + c.len); });
+      morphs.forEach(m => { for (const k in m.to) m.el.setAttribute(k, (m.from[k] + (m.to[k] - m.from[k]) * b).toFixed(1)); });
+    };
+    const finish = () => {
+      counts.forEach(c => { c.n.nodeValue = c.text; });
+      morphs.forEach(m => { for (const k in m.raw) m.el.setAttribute(k, m.raw[k]); });
+    };
+    Deck.demo(slide, {
+      mount(el, api) { this.t = null; api.raf(dt => { if (this.t === null) return; this.t += dt; this.t >= 1.8 ? (this.t = null, finish()) : paint(this.t); }); },
+      enter() { if (on()) { this.t = 0; paint(0); } },
+      leave() { this.t = null; finish(); }
+    });
   });
 });
 </script>
@@ -359,7 +640,7 @@ window.addEventListener('DOMContentLoaded', () => {
       const canvas = el.querySelector('canvas');
       const ctx = api.fitCanvas(canvas);
       const s = { f: 2, a: 0.8, t: 0, playing: true };
-      const css = getComputedStyle(document.body);
+      const css = getComputedStyle(el); // the demo's own element, so a per-slide data-preset applies
       function draw() {
         const { w, h } = api.size(canvas);
         ctx.clearRect(0, 0, w, h);
@@ -394,6 +675,8 @@ window.addEventListener('DOMContentLoaded', () => {
 (() => {
   const W = 1920, H = 1080;
   const params = new URLSearchParams(location.search);
+  if (params.has('motion')) document.documentElement.classList.add('force-motion');
+  else if (params.has('reduced')) document.documentElement.classList.add('force-reduce');
   const MODE = params.has('presenter') ? 'presenter' : params.has('embed') ? 'embed' : 'deck';
   const errors = [];
   window.addEventListener('error', e => errors.push(String(e.message || e)));
@@ -535,7 +818,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   const Deck = {
     get index() { return cur; }, get step() { return step; }, slides, errors, mode: MODE,
-    reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    reducedMotion: params.has('motion') ? false : (params.has('reduced') || matchMedia('(prefers-reduced-motion: reduce)').matches),
     go: show, next, prev, demos,
     demo(target, hooks) {
       const el = typeof target === 'string' ? document.querySelector(target) : target;
@@ -564,6 +847,9 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   };
   window.Deck = Deck;
+  // Motion switch for the m- classes: on unless reduced motion (OS setting or ?reduced; ?motion forces it on).
+  // Presenter previews (?embed) stay on final states.
+  document.documentElement.classList.toggle('motion', !Deck.reducedMotion && MODE !== 'embed');
 
   /* ---------- boot ---------- */
   document.body.insertAdjacentHTML('beforeend', '<div class="deck-progress"></div><div class="deck-counter"></div><div class="deck-jump"></div><div class="deck-black"></div>');

@@ -6,12 +6,23 @@
   const warn = [];
   if (!window.Deck) return { problems: ['window.Deck missing — runtime script not loaded or crashed'], warn };
   await document.fonts.ready;
-  // A hidden/background tab doesn't advance CSS transitions; disable them while measuring.
+  // A hidden/background tab doesn't advance CSS transitions; disable them (and m- entrance animations,
+  // whose start frames move boxes) while measuring, so every slide is measured in its final state.
   const noAnim = document.createElement('style');
-  noAnim.textContent = '*,*::before,*::after{transition:none!important;animation-duration:0s!important}';
+  noAnim.textContent = '*,*::before,*::after{transition:none!important;animation:none!important}';
   document.head.appendChild(noAnim);
   const slides = Deck.slides;
   const ids = new Set();
+  // colour helpers for the contrast warning: any CSS colour string -> [r, g, b] (null if not a plain colour)
+  const probe = document.createElement('i');
+  document.body.appendChild(probe);
+  const rgb = v => {
+    v = (v || '').trim(); if (!v) return null;
+    probe.style.color = ''; probe.style.color = v; if (!probe.style.color) return null;
+    const m = getComputedStyle(probe).color.match(/[\d.]+/g); return m ? m.slice(0, 3).map(Number) : null;
+  };
+  const lum = c => { const [r, g, b] = c.map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
   const per = [];
   const startIndex = Deck.index, startStep = Deck.step;
 
@@ -100,20 +111,54 @@
       const ov = (a.bottom - b.top) / k;
       if (ov > 3) issues.push(`${label(flow[j])} overlaps the block above it by ${Math.round(ov)}px`);
     }
-    // always-on rules: no large empty band at the bottom, not too much text
-    if (!s.classList.contains('cover') && !s.classList.contains('statement')) {
-      let bottom = 0;
-      for (const el of s.children) {
-        if (el.matches('aside.notes')) continue;
-        const r = el.getBoundingClientRect();
-        if (r.height) bottom = Math.max(bottom, (r.bottom - sr.top) / k);
+    // gradient text (background-clip: text) prints as a filled box in the PDF
+    for (const el of s.querySelectorAll('*')) {
+      const cs = getComputedStyle(el);
+      if (cs.backgroundClip === 'text' || cs.webkitBackgroundClip === 'text') problems.push(`slide ${i + 1} (${s.id}): ${label(el)} uses gradient text (background-clip: text) — breaks in PDF; use a solid colour`);
+    }
+    // token contrast on this slide's own preset (WCAG AA 4.5:1 for body-size text)
+    {
+      const cs = getComputedStyle(s), bg = rgb(cs.getPropertyValue('--bg'));
+      if (bg) for (const t of ['--text', '--muted', '--accent']) {
+        const c = rgb(cs.getPropertyValue(t)), r = c && contrast(c, bg);
+        if (r && r < 4.5) warn.push(`slide ${i + 1} (${s.id}): ${t} on --bg contrast ${r.toFixed(2)}:1 (< 4.5 AA)`);
       }
-      if (bottom && 1080 - bottom > 180) warn.push(`slide ${i + 1} (${s.id}): content ends ${Math.round(1080 - bottom)}px above the bottom (${Math.round(1080 - bottom - parseFloat(getComputedStyle(s).paddingBottom))}px usable above the bottom padding)`);
+    }
+    // always-on rules: no large empty band at the bottom, not too much text
+    if (!s.matches('.cover, .statement, .conclusion, .divider')) {
+      // measure what is drawn, not the boxes: a stretched card (.cols.fill, .vrow) or an SVG with an empty
+      // viewBox margin reaches the bottom while its text or drawing ends far above it. Ink = elements with
+      // their own text, media/controls, SVG shapes, and childless boxes with a visible fill or border.
+      const SHAPES = /^(rect|path|line|polyline|polygon|circle|ellipse|text|image|use|foreignobject)$/;
+      let bottom = 0;
+      for (const el of s.querySelectorAll('*')) {
+        if (el.closest('aside.notes, defs, clipPath, mask, marker, pattern')) continue;
+        const tag = el.tagName.toLowerCase();
+        let ink;
+        if (el instanceof SVGElement) ink = SHAPES.test(tag);
+        else if (/^(img|video|canvas|input|button|select|textarea|hr|iframe)$/.test(tag)) ink = true;
+        else if ([...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) ink = true;
+        else if (!el.children.length) {
+          const cs = getComputedStyle(el);
+          ink = !/rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor) || cs.backgroundImage !== 'none' || parseFloat(cs.borderBottomWidth) > 0 || parseFloat(cs.borderTopWidth) > 0;
+        }
+        if (!ink) continue;
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+        const r = el.getBoundingClientRect();
+        if (r.width || r.height) bottom = Math.max(bottom, (r.bottom - sr.top) / k);
+      }
+      if (bottom && 1080 - bottom > 180) warn.push(`slide ${i + 1} (${s.id}): content ends ${Math.round(1080 - bottom)}px above the bottom (${Math.round(1080 - bottom - parseFloat(getComputedStyle(s).paddingBottom))}px usable above the bottom padding; measured on text, figures and drawn shapes, not on stretched boxes)`);
       const chars = [...s.querySelectorAll('p, li, td, th, .card, figcaption')]
         .filter(e => !e.closest('aside.notes') && !e.querySelector('p, li, td'))
         .reduce((a, e) => a + e.textContent.replace(/\s+/g, '').length, 0);
       if (chars > 420) warn.push(`slide ${i + 1} (${s.id}): ${chars} characters of text`);
     }
+    // motion: one m- pattern per slide (references/motion.md); .m-count needs a number in its text
+    const MOTION = { title: '.m-words, .m-rise', section: '.m-circle', numbers: '.m-count, .m-grow', flow: '.m-flow', morph: '.m-morph', steps: '.m-dim', spotlight: '.m-spot', sweep: '.m-sweep', wipe: '.m-wipe' };
+    const used = Object.keys(MOTION).filter(g => s.matches(MOTION[g]) || s.querySelector(MOTION[g]));
+    if (used.length > 1) warn.push(`slide ${i + 1} (${s.id}): ${used.length} motion patterns (${used.join(', ')}); keep one per slide`);
+    s.querySelectorAll('.m-count').forEach(c => { if (!/\d/.test(c.textContent)) problems.push(`slide ${i + 1} (${s.id}): .m-count "${c.textContent.trim().slice(0, 20)}" has no number to count`); });
     const nSteps = s.querySelectorAll('.step').length;
     const demoCount = Deck.demos.filter(d => d.slide === s).length;
     const hasNotes = !!s.querySelector('aside.notes');
@@ -144,6 +189,7 @@
 
   Deck.go(startIndex, startStep);
   noAnim.remove();
+  probe.remove();
   return {
     pass: problems.length === 0,
     slides: slides.length,

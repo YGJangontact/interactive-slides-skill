@@ -22,8 +22,10 @@ folder over localhost first:
    shown and reports: elements spilling outside 1920×1080; content running out of its card, row or
    demo stage; `overflow: hidden` boxes hiding content; stacked blocks or grid siblings overlapping;
    text under 22px; duplicate ids; a keyboard walk that doesn't reach the end; demo and chart errors;
-   unregistered `.demo`s; unpinned CDN URLs. Warnings: bottom gaps over 180 px, text-heavy slides
-   overlapping text labels inside an SVG, and charts or figures without `data-src`. Fix every `problems` entry; act on the warnings unless the slide is meant to be read (a
+   unregistered `.demo`s; unpinned CDN URLs; gradient text (`background-clip: text`, breaks in PDF).
+   Warnings: bottom gaps over 180 px (measured on text and drawn shapes, so a stretched card whose
+   diagram ends high counts), text-heavy slides, overlapping text labels inside an SVG, charts
+   or figures without `data-src`, and `--text`/`--muted`/`--accent` under 4.5:1 on a slide's `--bg`. Fix every `problems` entry; act on the warnings unless the slide is meant to be read (a
    table, a formula appendix). Delete the copied `check_deck.js` afterwards.
 3. Drive each demo once (set an input + dispatch `input`, read the `<output>`).
 4. Look at every changed slide as an image:
@@ -36,7 +38,8 @@ folder over localhost first:
    `Deck.go(n - 1)` in the page); pane screenshots time out while the pane is hidden (use the step 4
    images); a dev server started by another session may be unreachable from this one — start your
    own on a free port with `"autoPort": false` so the command's port and the URL stay in sync.
-6. Fonts and KaTeX come from CDNs; if the pane is offline the deck falls back to system fonts —
+6. Reduced motion: many Windows PCs report `prefers-reduced-motion: reduce` (animation effects off), and the deck then shows only final states. Check motion slides once with `?motion` and once with `?reduced`; tell the user to check the presenting laptop's setting or open the deck with `?motion`.
+7. Fonts and KaTeX come from CDNs; if the pane is offline the deck falls back to system fonts —
    that's expected, not a bug.
 
 ## 3. PDF (on request)

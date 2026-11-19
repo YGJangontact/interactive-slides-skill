@@ -17,7 +17,9 @@ demos, not navigation code.
 Get what you can't infer, in one message (skip whatever the user already said or attached):
 
 - **Purpose** → preset: lab meeting / conference / defense → `academic`; blog lecture / public talk /
-  workshop → `lecture`.
+  workshop → `lecture`. When the user wants a more designed look, offer the style presets `paper`
+  (editorial-light), `stage` (cinematic-dark) or `grid` (swiss-grid) — when-to-use table and contrast
+  in `references/design.md` "Presets".
 - **Time or slide count** (rule of thumb: ~1 slide per minute, demo slides count double).
 - **Density**: speaker-led vs reading-first (see `references/design.md`).
 - **Material**: notes, paper, figures, code. Use the user's own figures and numbers; never invent a
@@ -36,7 +38,7 @@ Give each line a layout note too: the slide's job → its arrangement → where 
 `7 [비교] 2열: 왼쪽 수식, 오른쪽 곡선 — 초점은 최적점`. It forces a layout decision per slide
 before any HTML exists.
 A demo is worth it only where seeing a value change explains more than a figure; typically one demo
-per 4–6 slides, never two in a row. Pick a pattern from `references/demos.md` for each.
+per 4–6 slides, never two in a row. Pick a pattern from `references/demos.md` for each. For entrance, transition or emphasis motion (not interactive demos), pick from `references/motion.md` — at most one motion pattern per slide, final state readable without it. The template already implements the research-talk patterns as opt-in `m-` classes (`.m-words`, `.m-circle`, `.m-count`, `.m-grow`, `.m-flow`, `.m-morph`, `.m-dim`, `.m-spot`, `.m-sweep`, `.m-wipe`; see motion.md "템플릿 클래스"): add the class instead of writing new animation CSS.
 
 Put a short **deck spec** above the outline: preset, color tokens (accent and any overrides), fonts,
 slide count, density. Once the user OKs it, copy it into a `<!-- DECK SPEC ... -->` comment at the
@@ -51,7 +53,10 @@ a built deck is not. (If the user said "just make it", proceed and note your ass
 
 1. Copy `assets/deck-template.html` to `<folder>/<short-name>.html`. Read it first — the comments
    explain the structure.
-2. Set `<title>`, `<html lang>`, `data-preset` on `<body>`, and adjust tokens if needed.
+2. Set `<title>`, `<html lang>`, `data-preset` on `<body>`, and adjust tokens if needed. Talks with
+   3–6 sections: add `data-progress="sections"` on `<body>` and `data-section` on each section's first
+   slide; use `.divider` for section breaks and `.conclusion` only for takeaways (neutral background +
+   accent rule; `.conclusion.solid` for a full accent page) (design.md).
 3. Replace everything between `SLIDES START` and `SLIDES END` with the deck's slides; give each
    `<section class="slide">` a unique `id` and an `<aside class="notes">`.
 4. Replace the sample `#waveDemo` registration with the deck's demos (`Deck.demo(...)` inside the
@@ -125,7 +130,8 @@ the source file — re-labelling is where silent errors creep in.
 |---|---|
 | `assets/deck-template.html` | Step 3 — starting point for every deck |
 | `references/demos.md` | Planning and writing demos |
-| `references/design.md` | Presets, Korean typography, type scale, slide types, notes |
+| `references/motion.md` | Entrance/transition/emphasis motion patterns by slide role, sources and licenses, what to avoid in research talks |
+| `references/design.md` | Presets (when to use, contrast), Korean typography, type scale, slide types (numbered columns / divider / conclusion), section progress strip, notes |
 | `references/math-code.md` | Deck has equations or code |
 | `references/delivery.md` | Verify, PDF, artifact link, presenting |
 | `scripts/check_deck.js` | Step 4 — run in the browser pane |
