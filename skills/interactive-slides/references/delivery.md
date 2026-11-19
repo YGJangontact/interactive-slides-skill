@@ -36,7 +36,8 @@ folder over localhost first:
    `Deck.go(n - 1)` in the page); pane screenshots time out while the pane is hidden (use the step 4
    images); a dev server started by another session may be unreachable from this one — start your
    own on a free port with `"autoPort": false` so the command's port and the URL stay in sync.
-6. Fonts and KaTeX come from CDNs; if the pane is offline the deck falls back to system fonts —
+6. Reduced motion: many Windows PCs report `prefers-reduced-motion: reduce` (animation effects off), and the deck then shows only final states. Check motion slides once with `?motion` and once with `?reduced`; tell the user to check the presenting laptop's setting or open the deck with `?motion`.
+7. Fonts and KaTeX come from CDNs; if the pane is offline the deck falls back to system fonts —
    that's expected, not a bug.
 
 ## 3. PDF (on request)

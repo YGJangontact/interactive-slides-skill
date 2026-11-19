@@ -24,7 +24,7 @@ If a still image says it equally well, use the image.
   must be version-pinned and have a visible fallback if it fails.
 - **Colors from tokens.** Read `getComputedStyle(document.body).getPropertyValue('--accent')` etc.,
   so the demo follows the preset.
-- **Motion respects `Deck.reducedMotion`**: draw the end state instead of animating.
+- **Motion respects `Deck.reducedMotion`**: draw the end state instead of animating. `?motion` in the URL forces motion on and `?reduced` forces it off (the template sets `html.force-motion` / `html.force-reduce`); entrance patterns are in `references/motion.md`.
 
 Canvas vs SVG: canvas (`api.fitCanvas`) for plots with many points or per-frame animation; SVG for
 diagrams with hover/click targets and crisp labels.

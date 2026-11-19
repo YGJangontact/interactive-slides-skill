@@ -178,9 +178,12 @@ body.presenter .deck-viewport, body.presenter .deck-progress, body.presenter .de
   .step { opacity: 1 !important; transform: none !important; }
   .deck-progress, .deck-counter, .deck-jump, .deck-black, .presenter-ui { display: none !important; }
 }
+/* Reduced motion: OS setting, unless ?motion forces motion on (rehearsal on a PC with animations off);
+   ?reduced forces the reduced path for testing. Final states must read without any animation. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  html:not(.force-motion) *, html:not(.force-motion) *::before, html:not(.force-motion) *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+html.force-reduce *, html.force-reduce *::before, html.force-reduce *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 </style>
 </head>
 <body data-preset="academic">
@@ -394,6 +397,8 @@ window.addEventListener('DOMContentLoaded', () => {
 (() => {
   const W = 1920, H = 1080;
   const params = new URLSearchParams(location.search);
+  if (params.has('motion')) document.documentElement.classList.add('force-motion');
+  else if (params.has('reduced')) document.documentElement.classList.add('force-reduce');
   const MODE = params.has('presenter') ? 'presenter' : params.has('embed') ? 'embed' : 'deck';
   const errors = [];
   window.addEventListener('error', e => errors.push(String(e.message || e)));
@@ -535,7 +540,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   const Deck = {
     get index() { return cur; }, get step() { return step; }, slides, errors, mode: MODE,
-    reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    reducedMotion: params.has('motion') ? false : (params.has('reduced') || matchMedia('(prefers-reduced-motion: reduce)').matches),
     go: show, next, prev, demos,
     demo(target, hooks) {
       const el = typeof target === 'string' ? document.querySelector(target) : target;

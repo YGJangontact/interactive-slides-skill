@@ -36,7 +36,7 @@ Give each line a layout note too: the slide's job → its arrangement → where 
 `7 [비교] 2열: 왼쪽 수식, 오른쪽 곡선 — 초점은 최적점`. It forces a layout decision per slide
 before any HTML exists.
 A demo is worth it only where seeing a value change explains more than a figure; typically one demo
-per 4–6 slides, never two in a row. Pick a pattern from `references/demos.md` for each.
+per 4–6 slides, never two in a row. Pick a pattern from `references/demos.md` for each. For entrance, transition or emphasis motion (not interactive demos), pick from `references/motion.md` — at most one motion pattern per slide, final state readable without it.
 
 Put a short **deck spec** above the outline: preset, color tokens (accent and any overrides), fonts,
 slide count, density. Once the user OKs it, copy it into a `<!-- DECK SPEC ... -->` comment at the
@@ -125,6 +125,7 @@ the source file — re-labelling is where silent errors creep in.
 |---|---|
 | `assets/deck-template.html` | Step 3 — starting point for every deck |
 | `references/demos.md` | Planning and writing demos |
+| `references/motion.md` | Entrance/transition/emphasis motion patterns by slide role, sources and licenses, what to avoid in research talks |
 | `references/design.md` | Presets, Korean typography, type scale, slide types, notes |
 | `references/math-code.md` | Deck has equations or code |
 | `references/delivery.md` | Verify, PDF, artifact link, presenting |
